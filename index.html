@@ -6,20 +6,28 @@
 <title>품절품목 현황 대시보드</title>
 <style>
   :root{
-    --bg: #12171a;
-    --panel: #181f22;
-    --panel-2: #1e262a;
-    --line: #2a3236;
-    --ink: #e4e9ea;
-    --ink-dim: #97a4a8;
-    --ink-faint: #626e72;
-    --red: #d97f79;
-    --red-bg: rgba(217,127,121,0.10);
-    --amber: #cd9e5c;
-    --amber-bg: rgba(205,158,92,0.10);
-    --teal: #5cb0a3;
-    --teal-bg: rgba(92,176,163,0.10);
-    --accent: #5cb0a3;
+    --bg: #eef1f7;
+    --panel: #ffffff;
+    --panel-2: #f2f5fa;
+    --line: #dde3ec;
+    --line-strong: #c7cfdc;
+    --ink: #131b2c;
+    --ink-dim: #4c5a72;
+    --ink-faint: #8592a6;
+    --red: #d1483f;
+    --red-ink: #9c352e;
+    --red-bg: rgba(209,72,63,0.10);
+    --amber: #c1791b;
+    --amber-ink: #8f5a12;
+    --amber-bg: rgba(193,121,27,0.11);
+    --teal: #2f5fd6;
+    --teal-ink: #24469f;
+    --teal-bg: rgba(47,95,214,0.09);
+    --accent: #2f5fd6;
+    --accent-grad: linear-gradient(90deg,#2f5fd6,#6f8fe8);
+    --shadow-sm: 0 1px 2px rgba(19,27,44,0.05), 0 1px 3px rgba(19,27,44,0.05);
+    --shadow-md: 0 4px 14px rgba(19,27,44,0.08);
+    --radius: 12px;
     --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     --sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
   }
@@ -27,50 +35,84 @@
   html,body{margin:0;padding:0;}
   body{
     background: var(--bg);
+    background-image: radial-gradient(circle at 12% 0%, rgba(47,95,214,0.05), transparent 40%);
     color: var(--ink);
     font-family: var(--sans);
     font-size: 14px;
     line-height:1.5;
     min-height:100vh;
+    -webkit-font-smoothing:antialiased;
   }
-  .wrap{ max-width:1400px; margin:0 auto; padding: 28px 24px 60px; }
+  .wrap{ max-width:1440px; margin:0 auto; padding: 28px 28px 60px; }
 
   /* header */
-  .head{ display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:22px; flex-wrap:wrap;}
-  .head h1{ font-size:22px; font-weight:700; margin:0 0 4px; letter-spacing:-0.01em;}
+  .head{
+    display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:24px; flex-wrap:wrap;
+    padding-bottom:18px; border-bottom:1px solid var(--line);
+  }
+  .head-left{ display:flex; align-items:center; gap:14px; }
+  .head-badge{
+    width:42px; height:42px; border-radius:11px; background:var(--accent-grad); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:20px; flex:none;
+    box-shadow: var(--shadow-md);
+  }
+  .head h1{ font-size:21px; font-weight:800; margin:0 0 4px; letter-spacing:-0.015em; color:var(--ink);}
   .head .sub{ color:var(--ink-dim); font-size:13px; }
-  .head .sub b{ color:var(--ink); font-weight:600; }
+  .head .sub b{ color:var(--ink); font-weight:700; }
+  #lastSavedGlobal{ color:var(--ink-faint); }
+  #lastSavedGlobal.fresh{ color:var(--teal-ink); font-weight:700; }
   .head-actions{ display:flex; gap:8px; }
   .btn{
-    background: var(--panel-2); color:var(--ink); border:1px solid var(--line);
-    padding:8px 14px; border-radius:7px; font-size:13px; cursor:pointer; font-family:inherit;
-    display:flex; align-items:center; gap:6px; transition: border-color .15s, background .15s;
+    background: var(--panel); color:var(--ink); border:1px solid var(--line-strong);
+    padding:9px 15px; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit;
+    display:flex; align-items:center; gap:6px; transition: border-color .15s, background .15s, box-shadow .15s, transform .05s;
+    box-shadow: var(--shadow-sm);
   }
-  .btn:hover{ border-color:#3d484c; background:#20292d; }
-  .btn.primary{ background: var(--teal); color:#08201c; border-color:var(--teal); font-weight:600;}
-  .btn.primary:hover{ filter:brightness(1.08); }
-  .btn.danger{ color:var(--red); }
+  .btn:hover{ border-color:#aab6c9; background:var(--panel-2); }
+  .btn.primary{ background: var(--accent-grad); color:#ffffff; border-color:transparent; font-weight:700;}
+  .btn.primary:hover{ filter:brightness(1.06); }
+  .btn.danger{ color:var(--red-ink); }
+  .btn.danger:hover{ background:var(--red-bg); border-color:rgba(209,72,63,0.35); }
   .btn:active{ transform: translateY(1px); }
 
   /* kpi cards */
-  .kpis{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:22px; }
-  .kpi{ background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
-        border-left:3px solid var(--line); }
-  .kpi .label{ color:var(--ink-dim); font-size:12px; margin-bottom:6px; }
-  .kpi .val{ font-size:23px; font-weight:700; font-variant-numeric: tabular-nums; color:var(--ink); }
-  .kpi .val small{ font-size:13px; color:var(--ink-dim); font-weight:500; }
-  .kpi.red{ background:var(--red-bg); border-left-color:var(--red); }
-  .kpi.red .val{ color:var(--red); }
-  .kpi.amber{ background:var(--amber-bg); border-left-color:var(--amber); }
-  .kpi.amber .val{ color:var(--amber); }
-  .kpi.teal{ background:var(--teal-bg); border-left-color:var(--teal); }
-  .kpi.teal .val{ color:var(--teal); }
+  .kpis{ display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:26px; }
+  .kpi{
+    position:relative; overflow:hidden;
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:15px 16px 14px;
+    box-shadow: var(--shadow-sm); transition: transform .15s, box-shadow .15s;
+  }
+  .kpi:hover{ transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .kpi::before{
+    content:''; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--line-strong);
+  }
+  .kpi .icon{ font-size:14px; margin-bottom:7px; display:inline-flex; opacity:.9;}
+  .kpi .label{ color:var(--ink-dim); font-size:12px; font-weight:600; margin-bottom:6px; letter-spacing:.01em; white-space:nowrap;}
+  .kpi .val{ font-size:24px; font-weight:800; font-variant-numeric: tabular-nums; color:var(--ink); letter-spacing:-0.01em;}
+  .kpi .val small{ font-size:13px; color:var(--ink-dim); font-weight:600; }
+  .kpi.red::before{ background:var(--red); }
+  .kpi.red .val{ color:var(--red-ink); }
+  .kpi.amber::before{ background:var(--amber); }
+  .kpi.amber .val{ color:var(--amber-ink); }
+  .kpi.teal::before{ background:var(--teal); }
+  .kpi.teal .val{ color:var(--teal-ink); }
+  /* rate variant: same color family, softer surface so raw-count vs rate cards read as a pair */
+  .kpi.rate{ background:var(--panel-2); }
+  .kpi.rate::before{ opacity:.55; }
+  .kpi.red.rate .val{ color:var(--red-ink); opacity:.85; }
+  .kpi.amber.rate .val{ color:var(--amber-ink); opacity:.85; }
 
   /* tabs */
-  .tabs{ display:flex; gap:4px; border-bottom:1px solid var(--line); margin-bottom:16px; }
-  .tab{ padding:10px 16px; cursor:pointer; color:var(--ink-dim); font-size:14px; font-weight:600;
-        border-bottom:2px solid transparent; margin-bottom:-1px; }
-  .tab.active{ color:var(--ink); border-bottom-color:var(--teal); }
+  .tabs{
+    display:flex; gap:2px; margin-bottom:18px; background:var(--panel-2); border:1px solid var(--line);
+    border-radius:11px; padding:4px; flex-wrap:wrap;
+  }
+  .tab{
+    padding:9px 16px; cursor:pointer; color:var(--ink-dim); font-size:13.5px; font-weight:700;
+    border-radius:8px; transition: background .15s, color .15s, box-shadow .15s;
+  }
+  .tab:hover{ color:var(--ink); }
+  .tab.active{ color:var(--accent); background:var(--panel); box-shadow: var(--shadow-sm); font-weight:800; }
 
   .panel{ display:none; }
   .panel.active{ display:block; }
@@ -78,66 +120,105 @@
   /* toolbar */
   .toolbar{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; align-items:center; }
   .toolbar input[type="text"], .toolbar select{
-    background:var(--panel-2); border:1px solid var(--line); color:var(--ink);
-    padding:8px 10px; border-radius:7px; font-size:13px; font-family:inherit;
+    background:var(--panel); border:1px solid var(--line-strong); color:var(--ink);
+    padding:8px 11px; border-radius:8px; font-size:13px; font-family:inherit; box-shadow: var(--shadow-sm);
   }
-  .toolbar input[type="text"]{ min-width:200px; }
+  .toolbar input[type="text"]:focus, .toolbar select:focus{ outline:none; border-color:var(--accent); }
+  .toolbar input[type="text"]{ min-width:220px; }
   .toolbar .spacer{ flex:1; }
-  .count-badge{ color:var(--ink-dim); font-size:12.5px; padding: 0 4px;}
+  .count-badge{ color:var(--ink-dim); font-size:12.5px; font-weight:600; padding: 0 4px;}
   .save-indicator{ font-size:12px; color:var(--ink-faint); display:flex; align-items:center; gap:5px; min-width:110px;}
-  .save-dot{ width:6px; height:6px; border-radius:50%; background:var(--ink-faint); }
-  .save-dot.saved{ background:var(--teal); }
-  .save-dot.saving{ background:var(--amber); }
+  .save-dot{ width:6px; height:6px; border-radius:50%; background:var(--ink-faint); transition:background .2s; }
+  .save-dot.saved{ background:var(--teal); box-shadow:0 0 0 3px rgba(47,95,214,0.14); }
+  .save-dot.saving{ background:var(--amber); animation: pulse-dot 0.9s ease-in-out infinite; }
+  @keyframes pulse-dot{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
 
   /* table */
-  .table-scroll{ overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--panel); }
+  .table-scroll{ overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); box-shadow: var(--shadow-sm); }
   table{ border-collapse:collapse; width:100%; font-size:13px; white-space:nowrap; }
   thead th{
-    position:sticky; top:0; background:var(--panel-2); color:var(--ink-dim);
-    font-weight:600; font-size:11.5px; text-transform:uppercase; letter-spacing:.03em;
-    padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; cursor:pointer;
+    position:sticky; top:0; background:#e7ecf5; color:var(--ink);
+    font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:.035em;
+    padding:11px 12px; border-bottom:1px solid var(--line-strong); text-align:left; cursor:pointer;
     user-select:none;
   }
-  thead th:hover{ color:var(--ink); }
-  thead th .arrow{ opacity:.5; margin-left:3px; font-size:10px;}
-  tbody td{ padding:9px 12px; border-bottom:1px solid #212a2d; font-variant-numeric: tabular-nums; }
-  tbody tr:nth-child(even){ background: rgba(255,255,255,0.014); }
-  tbody tr:hover{ background:#202a2e; }
+  thead th:hover{ color:var(--accent); background:#dfe6f2; }
+  thead th .arrow{ opacity:.55; margin-left:3px; font-size:10px;}
+  tbody td{ padding:9px 12px; border-bottom:1px solid #eef1f6; font-variant-numeric: tabular-nums; color:var(--ink); }
+  tbody tr:nth-child(even){ background: rgba(19,27,44,0.018); }
+  tbody tr:hover{ background:var(--teal-bg); }
   tbody tr:last-child td{ border-bottom:none; }
   td.num{ text-align:right; }
   td.editable{ cursor:text; border-radius:5px; }
-  td.editable:hover{ background:#20292d; box-shadow: inset 0 0 0 1px var(--line); }
-  td.editable:focus{ outline:none; background:#1c2529; box-shadow: inset 0 0 0 1px var(--teal); }
+  td.editable:hover{ background:#e5edff; box-shadow: inset 0 0 0 1px var(--line-strong); }
+  td.editable:focus{ outline:none; background:#dbe7ff; box-shadow: inset 0 0 0 1.5px var(--accent); }
   td.edited{ box-shadow: inset 3px 0 0 var(--amber); }
-  .badge{ display:inline-block; padding:2px 8px; border-radius:99px; font-size:12px; font-weight:600; }
-  .badge.s품절{ background:var(--red-bg); color:var(--red); }
-  .badge.s품절없음{ background: rgba(255,255,255,0.05); color:var(--ink-faint); }
+  .badge{ display:inline-block; padding:3px 9px; border-radius:99px; font-size:12px; font-weight:700; }
+  .badge.s품절{ background:var(--red-bg); color:var(--red-ink); }
+  .badge.s품절없음{ background: rgba(19,27,44,0.06); color:var(--ink-faint); }
   select.status-select{
-    background:transparent; border:1px solid transparent; color:inherit; font:inherit; font-weight:600;
+    background:transparent; border:1px solid transparent; color:inherit; font:inherit; font-weight:700;
     padding:2px 4px; border-radius:6px;
   }
-  select.status-select:hover, select.status-select:focus{ border-color:var(--line); background:var(--panel-2); outline:none;}
+  select.status-select:hover, select.status-select:focus{ border-color:var(--line-strong); background:var(--panel-2); outline:none;}
 
   /* summary tab */
-  .bar-cell{ display:flex; align-items:center; gap:8px; min-width:140px; }
-  .bar-track{ flex:1; height:6px; background:#222b2e; border-radius:99px; overflow:hidden; }
-  .bar-fill{ height:100%; border-radius:99px; }
-  .bar-fill.red{ background:var(--red); }
-  .bar-fill.amber{ background:var(--amber); }
-  .bar-num{ font-size:12px; color:var(--ink-dim); width:42px; text-align:right; }
-  tr.total-row td{ background:#1a2226; font-weight:700; border-top:1px solid var(--line); }
+  #mgrTable{ font-size:13.5px; }
+  #mgrTable td, #mgrTable th{ padding:10px 14px; }
+  #mgrTable thead th[data-key="manager"], #mgrTable tbody td:first-child{
+    position:sticky; left:0; z-index:5; background:#fff; box-shadow: 2px 0 4px rgba(19,27,44,0.05);
+  }
+  #mgrTable thead th.grp-head[colspan]{ position:relative; }
+  #mgrTable tbody td:first-child{ font-weight:700; color:var(--ink); }
+  .mgr-name{ display:flex; align-items:center; gap:9px; }
+  .mgr-avatar{
+    width:26px; height:26px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:800; color:#fff; background:linear-gradient(135deg,#7a8bb8,#4c5a72);
+  }
+  tbody tr:nth-child(even) td:first-child{ background:#f9fafc; }
+  #mgrTable tbody tr:hover td:first-child{ background:var(--teal-bg); }
+  .bar-cell{ display:flex; align-items:center; gap:9px; min-width:150px; }
+  .bar-track{ flex:1; height:8px; background:#e6eaf1; border-radius:99px; overflow:hidden; box-shadow: inset 0 1px 1px rgba(19,27,44,.05); }
+  .bar-fill{ height:100%; border-radius:99px; transition: width .3s; }
+  .bar-fill.red{ background: linear-gradient(90deg,#e0716a,var(--red)); }
+  .bar-fill.amber{ background: linear-gradient(90deg,#dba552,var(--amber)); }
+  .bar-num{ font-size:12.5px; color:var(--ink-dim); font-weight:700; width:46px; text-align:right; font-variant-numeric: tabular-nums;}
+  #mgrTable td.num{ font-weight:600; }
+  tr.total-row td{ background:#e9edf5 !important; font-weight:800; border-top:2px solid var(--line-strong); color:var(--ink); }
+  tr.total-row td:first-child{ background:#e9edf5 !important; }
+  thead th.grp-head{ text-align:center; font-size:12px; letter-spacing:.03em; font-weight:800; }
+  thead th.grp-red{ background: rgba(209,72,63,0.14); color:var(--red-ink); border-bottom:1px solid rgba(209,72,63,0.25); }
+  thead th.grp-amber{ background: rgba(193,121,27,0.16); color:var(--amber-ink); border-bottom:1px solid rgba(193,121,27,0.25); }
+  #mgrTable thead th[class*="grp-"]:not(.grp-head){ font-size:11px; }
+  #mgrTable colgroup col.sep{ border-left:2px solid var(--line-strong); }
+  #mgrTable td[data-key="soCount"], #mgrTable th[data-key="soCount"],
+  #mgrTable td[data-key="expCount"], #mgrTable th[data-key="expCount"]{ border-left:2px solid var(--line-strong); }
 
   .foot-note{ color:var(--ink-faint); font-size:12px; margin-top:14px; }
   .foot-note code{ background:var(--panel-2); padding:1px 5px; border-radius:4px; font-family:var(--mono); }
+
+  /* client hover tooltip */
+  .client-tip{ position:relative; cursor:help; border-bottom:1px dotted var(--ink-faint); }
+  .client-tip:hover::after{
+    content: attr(data-tip);
+    position:absolute; left:0; top:100%; margin-top:8px; z-index:80;
+    background:#23324a; color:#f2f5f9; padding:10px 12px; border-radius:8px;
+    font-size:12px; font-weight:400; white-space:pre-line; width:max-content; max-width:260px;
+    box-shadow:0 8px 22px rgba(35,50,74,0.22); line-height:1.6; pointer-events:none;
+  }
+  .client-tip:hover::before{
+    content:''; position:absolute; left:10px; top:100%; margin-top:3px; z-index:80;
+    border:5px solid transparent; border-bottom-color:#23324a;
+  }
 
   /* upload */
   .upload-bar{ display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:16px; }
   .upload-drop{
     display:flex; align-items:center; gap:10px; flex-wrap:wrap;
-    background:var(--panel); border:1px dashed #3a4448; border-radius:10px;
+    background:var(--panel); border:1px dashed #c3ccd6; border-radius:10px;
     padding:16px 20px; cursor:pointer; flex:1; min-width:280px; transition:border-color .15s, background .15s;
   }
-  .upload-drop:hover{ border-color:var(--teal); background:#182123; }
+  .upload-drop:hover{ border-color:var(--teal); background:#eef4ff; }
   .upload-drop.dragover{ border-color:var(--teal); background:var(--teal-bg); }
   .upload-icon{ font-size:18px; color:var(--teal); }
   .upload-sub{ color:var(--ink-faint); font-size:12px; width:100%; margin-left:28px; }
@@ -148,9 +229,21 @@
     padding:4px 10px; cursor:pointer; font-family:inherit; font-size:12.5px;
   }
   .pager button:disabled{ opacity:.35; cursor:default; }
-  .pager button:not(:disabled):hover{ border-color:#3d484c; }
+  .pager button:not(:disabled):hover{ border-color:#c3ccd6; }
 
-  @media (max-width: 1100px){
+  /* storage backend banner */
+  .fb-banner{
+    display:none; align-items:flex-start; gap:10px; background:#fff3ea; border:1px solid #f0c199;
+    color:#8f5410; border-radius:10px; padding:12px 16px; margin-bottom:16px; font-size:13px; line-height:1.6;
+  }
+  .fb-banner.show{ display:flex; }
+  .fb-banner b{ font-weight:800; }
+  .fb-banner code{ background:rgba(0,0,0,0.06); padding:1px 6px; border-radius:5px; font-family:var(--mono); }
+  .storage-badge{ display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700; padding:2px 8px; border-radius:99px; margin-left:6px; }
+  .storage-badge.ok{ background:rgba(47,95,214,0.1); color:var(--teal-ink); }
+  .storage-badge.warn{ background:rgba(193,121,27,0.14); color:var(--amber-ink); }
+
+  @media (max-width: 1200px){
     .kpis{ grid-template-columns:repeat(3,1fr); }
   }
   @media (max-width: 640px){
@@ -161,12 +254,24 @@
 <body>
 <div class="wrap">
 
-  <div class="head">
+  <div class="fb-banner" id="fbBanner">
+    <span>⚠️</span>
     <div>
-      <h1>📦 품절품목 현황 대시보드</h1>
-      <div class="sub">동원약품그룹 · <b id="dataDate">-</b> 기준 · 셀을 클릭해 값을 바로 수정할 수 있어요</div>
+      <b>Firebase 설정이 필요해요.</b> 지금은 Claude.ai 밖(깃허브 등)에서 열려 있어서 클라우드 저장소가 연결되지 않았고, 저장 버튼을 눌러도 데이터가 저장되지 않습니다.
+      코드 상단의 <code>FIREBASE_CONFIG</code> 값을 본인의 Firebase 프로젝트 설정으로 채워주세요.
+    </div>
+  </div>
+
+  <div class="head">
+    <div class="head-left">
+      <div class="head-badge">📦</div>
+      <div>
+        <h1>품절품목 현황 대시보드</h1>
+        <div class="sub">동원약품그룹 · <b id="dataDate">-</b> 기준 · 셀을 클릭해 값을 바로 수정할 수 있어요 · 저장한 내용은 이 대시보드를 보는 모든 사람에게 공유돼요 · <span id="lastSavedGlobal">아직 저장 이력 없음</span></div>
+      </div>
     </div>
     <div class="head-actions">
+      <button class="btn primary" id="saveBtn">💾 저장</button>
       <button class="btn" id="exportBtn">⬇ CSV 내보내기</button>
       <button class="btn danger" id="resetBtn">↺ 원본으로 초기화</button>
     </div>
@@ -180,6 +285,7 @@
     <div class="tab" data-tab="pumjeoldata">품절 Data</div>
     <div class="tab" data-tab="finalorder">최종발주일</div>
     <div class="tab" data-tab="usage3m">3개월사용품목</div>
+    <div class="tab" data-tab="ordermgr">발주담당자</div>
   </div>
 
   <!-- LIST TAB -->
@@ -192,7 +298,7 @@
         <option value="품절">품절</option>
         <option value="품절없음">품절없음</option>
       </select>
-      <select id="regionFilter"><option value="">배송지 전체</option></select>
+      <select id="paymentFilter"><option value="">결제기준일 전체</option></select>
       <span class="count-badge" id="listCount"></span>
       <div class="spacer"></div>
       <div class="save-indicator" id="saveIndicator"><span class="save-dot"></span><span>대기 중</span></div>
@@ -215,7 +321,7 @@
     </div>
     <div class="table-scroll">
       <table id="mgrTable">
-        <thead><tr id="mgrHead"></tr></thead>
+        <thead id="mgrHead"></thead>
         <tbody id="mgrBody"></tbody>
       </table>
     </div>
@@ -280,7 +386,7 @@
       <label class="upload-drop" for="file-usage3m">
         <span class="upload-icon">⬆</span>
         <span><b>3개월사용품목</b> 엑셀/CSV 파일을 올려서 갱신하세요</span>
-        <span class="upload-sub">'3개월사용품목' 시트를 자동으로 찾아 불러옵니다 (없으면 첫 시트 사용) · 업로드하면 취급품목수·전체 사용품목 KPI가 자동으로 갱신돼요</span>
+        <span class="upload-sub">'3개월사용품목' 시트를 자동으로 찾아 불러옵니다 (없으면 첫 시트 사용) · 업로드하면 취급품목수 KPI가 자동으로 갱신돼요 · 우선처 기준으로 집계하며, 헤더에 "매출"·"매입"·"가용"이 들어간 컬럼(예: 05/06/07純매출, 05/06/07純매입, 現가용)의 합이 양수인 품목(행)만 사용품목수로 반영됩니다</span>
       </label>
       <input type="file" id="file-usage3m" accept=".xlsx,.xls,.csv" hidden>
       <div class="upload-meta" id="meta-usage3m">아직 업로드된 데이터가 없어요</div>
@@ -300,12 +406,144 @@
     </div>
   </div>
 
+  <!-- 발주담당자 TAB (upload-driven) -->
+  <div class="panel" id="panel-ordermgr">
+    <div class="upload-bar" id="upload-ordermgr-bar">
+      <label class="upload-drop" for="file-ordermgr">
+        <span class="upload-icon">⬆</span>
+        <span><b>발주담당자</b> 엑셀/CSV 파일을 올려서 담당자를 바꾸세요</span>
+        <span class="upload-sub">'발주담당자' 시트를 자동으로 찾아 불러옵니다 · "다미스코드" 또는 "매입처명"으로 거래처를 찾아, "발주담당" 컬럼의 값을 새 발주담당자로 반영합니다 (배송지·결제기준일·회전 컬럼이 있으면 함께 갱신) · 업로드 즉시 품절 현황 목록·담당자별 현황에 반영돼요</span>
+      </label>
+      <input type="file" id="file-ordermgr" accept=".xlsx,.xls,.csv" hidden>
+      <div class="upload-meta" id="meta-ordermgr">아직 업로드된 데이터가 없어요</div>
+      <button class="btn danger" id="clear-ordermgr" style="display:none;">데이터 지우기</button>
+    </div>
+    <div class="toolbar" id="toolbar-ordermgr" style="display:none;">
+      <input type="text" id="search-ordermgr" placeholder="전체 컬럼 검색...">
+      <span class="count-badge" id="count-ordermgr"></span>
+      <div class="spacer"></div>
+      <div class="pager" id="pager-ordermgr"></div>
+    </div>
+    <div class="table-scroll" id="scroll-ordermgr" style="display:none;">
+      <table id="table-ordermgr">
+        <thead><tr id="head-ordermgr"></tr></thead>
+        <tbody id="body-ordermgr"></tbody>
+      </table>
+    </div>
+  </div>
+
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
+/* =======================================================================
+   FIREBASE 저장소 연동 (Claude.ai 밖 — 예: GitHub Pages — 에서 열었을 때만 사용됨)
+   -----------------------------------------------------------------------
+   ⬇⬇⬇ 아래 FIREBASE_CONFIG 값을 본인 Firebase 프로젝트 설정으로 바꿔주세요 ⬇⬇⬇
+   1) https://console.firebase.google.com 에서 프로젝트 생성
+   2) 프로젝트 설정 → 일반 → "웹 앱 추가" → 아래 형태의 설정 객체를 복사해서 붙여넣기
+   3) 왼쪽 메뉴 "Firestore Database" 만들기 (프로덕션 모드로 시작해도 OK, 아래 규칙 참고)
+   4) Firestore "규칙" 탭에 아래 규칙을 붙여넣기 (사내 전용 링크로만 공유한다는 전제,
+      완전히 공개된 페이지라면 Firebase Authentication을 추가해서 read/write를 제한하는 걸 권장합니다):
+
+        rules_version = '2';
+        service cloud.firestore {
+          match /databases/{database}/documents {
+            match /stockout_dashboard/{docId} {
+              allow read, write: if true;
+            }
+          }
+        }
+   ======================================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
+};
+const FIREBASE_COLLECTION = 'stockout_dashboard';
+
+function isFirebaseConfigured(){
+  return FIREBASE_CONFIG.apiKey && !/YOUR_/.test(FIREBASE_CONFIG.apiKey) && !/YOUR_/.test(FIREBASE_CONFIG.projectId || '');
+}
+
+let _fbDB = null;
+function getFirestore(){
+  if(_fbDB) return _fbDB;
+  if(typeof firebase === 'undefined') throw new Error('Firebase SDK가 로드되지 않았어요');
+  if(!isFirebaseConfigured()) throw new Error('FIREBASE_CONFIG가 아직 설정되지 않았어요');
+  if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  _fbDB = firebase.firestore();
+  return _fbDB;
+}
+
+// window.storage와 동일한 인터페이스(get/set/delete/list)를 Firestore로 구현합니다.
+// Claude.ai 아티팩트 안에서 열렸다면 window.storage가 이미 존재하므로 이 shim은 쓰이지 않습니다.
+const firebaseStorageShim = {
+  async get(key, shared){
+    const db = getFirestore();
+    const snap = await db.collection(FIREBASE_COLLECTION).doc(key).get();
+    if(!snap.exists) return null;
+    const data = snap.data();
+    return { key, value: data.value, shared: !!shared };
+  },
+  async set(key, value, shared){
+    const db = getFirestore();
+    await db.collection(FIREBASE_COLLECTION).doc(key).set({ value, updatedAt: new Date().toISOString() });
+    return { key, value, shared: !!shared };
+  },
+  async delete(key, shared){
+    const db = getFirestore();
+    await db.collection(FIREBASE_COLLECTION).doc(key).delete();
+    return { key, deleted: true, shared: !!shared };
+  },
+  async list(prefix, shared){
+    const db = getFirestore();
+    const snap = await db.collection(FIREBASE_COLLECTION).get();
+    const keys = [];
+    snap.forEach(doc => { if(!prefix || doc.id.startsWith(prefix)) keys.push(doc.id); });
+    return { keys, prefix, shared: !!shared };
+  }
+};
+
+let usingFirebaseShim = false;
+if(typeof window.storage === 'undefined'){
+  window.storage = firebaseStorageShim;
+  usingFirebaseShim = true;
+}
+
+function initStorageBanner(){
+  const banner = document.getElementById('fbBanner');
+  if(usingFirebaseShim && !isFirebaseConfigured()){
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+  const badgeHost = document.querySelector('.head .sub');
+  if(badgeHost){
+    const badge = document.createElement('span');
+    if(!usingFirebaseShim){
+      badge.className = 'storage-badge ok';
+      badge.textContent = 'Claude.ai 저장소 연결됨';
+    } else if(isFirebaseConfigured()){
+      badge.className = 'storage-badge ok';
+      badge.textContent = 'Firebase 저장소 연결됨';
+    } else {
+      badge.className = 'storage-badge warn';
+      badge.textContent = 'Firebase 설정 필요';
+    }
+    badgeHost.appendChild(badge);
+  }
+}
+</script>
+<script>
+
 const MOKROK_RAW = {"headers": ["코드", "거래처", "취급품목수", "품절", "미발주", "품절예상", "미발주2", "총미발주", "최종발주일", "배송지구분", "발주담당자_변경전", "발주담당자", "결제기준일", "회전", "상태"], "rows": [["69656", "온라인팜", 405, 3, 0, 58, 4, 4, "20260714", "광주/의정부", "최형욱", "최형욱", "20일", "당월", "품절"], ["10263", "종근당", 370, 4, 0, 14, 3, 3, "20260713", "광주/의정부", "최형욱", "최형욱", "월말", "1개월", "품절"], ["10244", "일동제약", 250, 3, 0, 32, 1, 1, "20260713", "광주/의정부", "최형욱", "최형욱", "20일", "당월", "품절"], ["22182", "유한양행", 230, 2, 1, 5, 4, 5, "20260708", "광주/의정부", "이상연", "이상연", "25일", "당월", "품절"], ["10258", "제일약품", 208, 2, 2, 18, 17, 19, "20260709", "광주/의정부", "이상연", "이상연", "월말", "1개월", "품절"], ["10365", "휴텍스제약", 236, 3, 1, 15, 0, 1, "20260714", "광주/의정부", "서호진", "서호진", "20일", "당월", "품절"], ["10379", "환인제약", 265, 5, 1, 22, 0, 1, "20260715", "광주/의정부", "최형욱", "최형욱", "20일", "당월", "품절"], ["10074", "대원제약", 198, 8, 5, 37, 19, 24, "20260709", "광주/의정부", "이상연", "이상연", "월말", "1개월", "품절"], ["10073", "대웅제약", 88, 0, 0, 0, 0, 0, "누락", "광주/의정부", "최형욱", "최형욱", "25일", "당월", "품절없음"], ["10104", "동화약품", 167, 1, 0, 7, 0, 0, "20260714", "광주/의정부", "서호진", "서호진", "20일", "당월", "품절"], ["10029", "경동제약", 169, 2, 0, 1, 0, 0, "20260714", "광주/의정부", "김은경", "김은경", "월말", "당월", "품절"], ["25028", "한림ＭＳ", 162, 1, 0, 2, 2, 2, "20260708", "광주/의정부", "최형욱", "최형욱", "25일", "당월", "품절"], ["10115", "명인제약", 269, 2, 0, 9, 0, 0, "20260714", "광주/의정부", "최형욱", "최형욱", "월말", "1개월", "품절"], ["10202", "안국약품", 165, 0, 0, 6, 1, 1, "20260713", "광주/의정부", "김은경", "김은경", "월말", "1개월", "품절"], ["10043", "국제약품", 157, 4, 0, 4, 0, 0, "20260715", "광주/의정부", "최형욱", "최형욱", "월말", "3개월", "품절"], ["10230", "유나이티드", 128, 3, 2, 11, 8, 10, "20260715", "광주발주(격일발주)", "전송이", "전송이", "월말", "1개월", "품절"], ["10154", "삼진제약", 180, 7, 0, 9, 8, 8, "20260714", "광주/의정부", "전송이", "전송이", "월말", "1개월", "품절"], ["69290", "동아에스티", 149, 3, 2, 16, 15, 17, "20260709", "광주/의정부", "이상연", "이상연", "월말", "3개월", "품절"], ["10188", "신풍제약", 133, 1, 1, 0, 0, 1, "누락", "광주/의정부", "김은경", "김은경", "25일", "3개월", "품절"], ["10155", "삼천당제약", 164, 0, 0, 3, 2, 2, "20260715", "광주/의정부", "최형욱", "최형욱", "월말", "1개월", "품절"], ["10381", "휴온스", 215, 3, 0, 15, 4, 4, "20260713", "광주/의정부", "유아름", "유아름", "월말", "1개월", "품절"], ["10085", "대화제약", 141, 1, 0, 13, 1, 1, "20260714", "광주/의정부", "유아름", "유아름", "20일", "당월", "품절"], ["74134", "에이치케이이노엔", 164, 0, 0, 21, 0, 0, "20260715", "광주/의정부", "최형욱", "최형욱", "20일", "당월", "품절"], ["10092", "알리코제약", 212, 4, 0, 9, 2, 2, "20260713", "광주/의정부", "유아름", "유아름", "20일", "당월", "품절"], ["10355", "한독", 151, 0, 0, 17, 1, 1, "누락", "광주/의정부", "최형욱", "최형욱", "월말", "당월", "품절"], ["10046", "알보젠코리아", 140, 4, 0, 10, 10, 10, "20260715", "광주/의정부", "전송이", "전송이", "월말", "1개월", "품절"], ["26092", "대웅바이오", 54, 0, 0, 0, 0, 0, "누락", "광주/의정부", "최형욱", "최형욱", "25일", "당월", "품절없음"], ["10132", "부광약품", 101, 1, 1, 1, 1, 2, "20260715", "광주/의정부", "김은경", "김은경", "월말", "1개월", "품절"], ["10374", "현대약품", 116, 2, 1, 2, 0, 1, "20260714", "광주/의정부", "김은경", "김은경", "월말", "1개월", "품절"], ["10128", "보령", 153, 0, 0, 2, 2, 2, "누락", "광주/의정부", "최형욱", "최형욱", "월말", "당월", "품절"], ["10089", "동구바이오제약", 185, 3, 0, 17, 3, 3, "20260714", "광주/의정부", "서호진", "서호진", "20일", "당월", "품절"], ["20508", "제이더블유신약", 92, 5, 0, 5, 3, 3, "20260713", "광주/의정부", "전송이", "전송이", "월말", "당월", "품절"], ["10280", "코오롱제약", 101, 1, 0, 6, 1, 1, "20260713", "광주/의정부", "김은경", "김은경", "월말", "1개월", "품절"], ["10214", "영진약품", 122, 1, 0, 4, 3, 3, "20260715", "광주/의정부", "서호진", "서호진", "월말", "1개월", "품절"], ["10270", "유니메드", 166, 1, 0, 8, 0, 0, "20260714", "광주/의정부", "김은경", "김은경", "월말", "1개월", "품절"], ["10266", "제이더블유중외제약", 110, 2, 1, 11, 1, 2, "20260713", "광주/의정부", "서호진", "서호진", "25일", "당월", "품절"], ["10090", "동국제약", 204, 2, 1, 6, 6, 7, "누락", "광주/의정부", "서호진", "서호진", "25일", "당월", "품절"], ["10114", "명문제약", 122, 2, 0, 20, 1, 1, "20260708", "광주/의정부", "전송이", "전송이", "월말", "1개월", "품절"], ["10038", "광동제약", 87, 2, 0, 2, 2, 2, "20260715", "광주/의정부", "서호진", "서호진", "월말", "4개월", "품절"], ["10383", "에스케이케미칼", 140, 0, 0, 3, 1, 1, "20260715", "광주/의정부", "김은경", "김은경", "20일", "당월", "품절"], ["10295", "하나제약", 156, 4, 1, 6, 0, 1, "20260715", "광주/의정부", "유아름", "유아름", "20일", "1개월", "품절"], ["10246", "일양약품", 105, 0, 0, 3, 0, 0, "20260709", "광주/의정부", "김은경", "김은경", "25일", "당월", "품절"], ["10177", "팜젠사이언스", 160, 3, 0, 11, 6, 6, "20260713", "광주/의정부", "유아름", "유아름", "월말", "1개월", "품절"], ["10145", "삼아제약", 49, 1, 1, 14, 2, 3, "20260715", "광주/의정부", "유아름", "유아름", "월말", "1개월", "품절"], ["10152", "삼일제약", 132, 0, 0, 1, 0, 0, "20260715", "광주/의정부", "김은경", "김은경", "판매분결제", "당월", "품절"], ["10201", "아주약품", 171, 2, 0, 20, 8, 8, "20260714", "광주/의정부", "전송이", "전송이", "월말", "1개월", "품절"], ["10239", "이연제약", 83, 1, 1, 4, 2, 3, "20260713", "광주/의정부", "유아름", "유아름", "월말", "1개월", "품절"], ["10366", "한올바이오", 25, 0, 0, 0, 0, 0, "누락", "광주/의정부", "최형욱", "최형욱", "25일", "당월", "품절없음"], ["79719", "한국메딕스", 202, 3, 0, 10, 7, 7, "20260715", "광주/의정부", "서호진", "서호진", "월말", "1개월", "품절"], ["10164", "서울제약", 98, 0, 0, 3, 1, 1, "20260713", "광주/의정부", "유아름", "유아름", "25일", "당월", "품절"], ["10248", "일화", 72, 2, 1, 0, 0, 1, "20260714", "광주/의정부", "유아름", "유아름", "월말", "1개월", "품절"], ["10088", "동광제약", 134, 0, 0, 1, 1, 1, "20260714", "광주/의정부", "유아름", "유아름", "월말", "2개월", "품절"], ["10370", "한화제약", 62, 1, 0, 6, 2, 2, "20260714", "광주/의정부", "전송이", "전송이", "20일", "당월", "품절"], ["10037", "고려제약", 60, 1, 0, 7, 2, 2, "20260713", "광주/의정부", "김은경", "김은경", "판매분결제", "5개월", "품절"], ["10062", "녹십자", 98, 0, 0, 3, 1, 1, "누락", "광주", "최형욱", "최형욱", "월말", "당월", "품절"], ["10072", "대우제약", 86, 1, 0, 3, 2, 2, "20260715", "광주/의정부", "서호진", "서호진", "전문(20일),\n안약(월말)", "전문(당월),\n안약(1개월)", "품절"], ["10093", "동성제약", 47, 1, 0, 0, 0, 0, "20260715", "광주/의정부", "유아름", "유아름", "월말", "3개월", "품절"], ["10113", "메디카코리아", 160, 0, 0, 8, 0, 0, "20260713", "광주/의정부", "서호진", "서호진", "20일", "당월", "품절"], ["10232", "유영제약", 56, 0, 0, 6, 6, 6, "20260715", "광주/의정부", "서호진", "서호진", "월말", "1개월", "품절"], ["10047", "글락소스미스클라인", 34, 0, 0, 2, 0, 0, "누락", "광주/의정부", "전송이", "최형욱", "동원아이팜", "동원아이팜", "품절"], ["10350", "한국화이자", 17, 0, 0, 1, 1, 1, "누락", "광주", "최형욱", "최형욱", "월말", "2개월", "품절"], ["60039", "더유제약", 94, 2, 0, 5, 4, 4, "20260709", "광주/의정부", "서호진", "서호진", "월말", "1개월", "품절"], ["74707", "화이트생명과학", 50, 0, 0, 2, 0, 0, "20260713", "광주", "김은경", "김은경", "월말", "1개월", "품절"], ["10026", "건일제약", 40, 3, 0, 6, 0, 0, "누락", "광주/의정부", "최형욱", "최형욱", "20일", "당월", "품절"], ["20420", "삼전약품", 44, 2, 1, 0, 0, 1, "20260709", "광주/의정부", "서호진", "서호진", "월말", "3개월", "품절"], ["10082", "대한뉴팜", 109, 4, 0, 15, 7, 7, "20260714", "광주/의정부", "전송이", "전송이", "20일", "당월", "품절"], ["10118", "바이넥스", 84, 0, 0, 6, 0, 0, "20260714", "광주/의정부", "서호진", "서호진", "20일", "당월", "품절"], ["10233", "유유제약", 47, 0, 0, 5, 2, 2, "누락", "광주/의정부", "김은경", "김은경", "재고액제외", 0, "품절"], ["10299", "한국노바티스", 41, 1, 0, 6, 5, 5, "누락", "광주/의정부", "이상연", "이상연", "월말", "2개월", "품절"], ["10097", "동아제약", 66, 4, 0, 1, 1, 1, "20260708", "광주/의정부", "최형욱", "최형욱", "월말", "1개월", "품절"], ["10253", "비보존제약", 63, 1, 1, 3, 2, 3, "20260715", "광주/의정부", "전송이", "전송이", "월말", "1개월", "품절"], ["10329", "한국얀센", 10, 0, 0, 0, 0, 0, "20260715", "광주/의정부", "최형욱", "최형욱", "월말", "1개월", "품절없음"], ["10285", "태준제약", 34, 0, 0, 4, 0, 0, "20260714", "광주/의정부", "전송이", "전송이", "20일", "당월", "품절"], ["10064", "다림바이오텍", 67, 0, 0, 8, 2, 2, "20260713", "광주/의정부", "유아름", "유아름", "월말", "당월", "품절"], ["10268", "진양제약", 88, 1, 0, 5, 0, 0, "20260714", "광주/의정부", "유아름", "유아름", "월말", "1개월", "품절"], ["10283", "태극제약", 86, 0, 0, 1, 1, 1, "20260713", "광주/의정부", "서호진", "서호진", "20일", "당월", "품절"], ["21615", "사노피아벤티스코리아", 16, 1, 0, 0, 0, 0, "누락", "광주/의정부", "전송이", "최형욱", "동원아이팜", "동원아이팜", "품절"], ["16801", "한가람약품", 6, 0, 0, 1, 0, 0, "누락", "광주/의정부", "김동재", "유아름", "25일", "당월", "품절"], ["10120", "바이엘코리", 19, 1, 0, 0, 0, 0, "누락", "광주/의정부", "전송이", "최형욱", "동원아이팜", "동원아이팜", "품절"], ["10344", "한국파마", 53, 1, 1, 3, 1, 2, "20260713", "광주/의정부", "유아름", "유아름", "월말", "1개월", "품절"], ["10332", "한국엠에스디", 4, 0, 0, 0, 0, 0, "20260709", "광주/의정부", "전송이", "최형욱", "동원아이팜", "동원아이팜", "품절없음"], ["10481", "경보제약", 107, 2, 1, 4, 4, 5, "20260715", "광주", "서호진", "서호진", "월말", "1개월", "품절"], ["10245", "일성아이에스", 56, 2, 2, 6, 0, 2, "20260715", "광주/의정부", "전송이", "전송이", "20일", "당월", "품절"], ["79634", "휴온스생명과학", 0, 0, 0, 0, 0, 0, "누락", "광주/의정부", "유아름", "유아름", "판매분결제", "1개월", "품절없음"], ["10349", "프라임제약", 102, 6, 4, 2, 1, 5, "20260710", "광주/의정부", "서호진", "서호진", "월말", "1개월", "품절"], ["10347", "한국팜비오", 41, 0, 0, 1, 0, 0, "20260714", "광주/의정부", "서호진", "서호진", "20일", "당월", "품절"], ["10041", "구주제약", 91, 0, 0, 3, 1, 1, "20260714", "광주/의정부", "유아름", "유아름", "월말", "3개월", "품절"], ["10215", "영풍제약", 24, 0, 0, 1, 0, 0, "누락", "광주/의정부", "김동재", "유아름", "월말", "1개월", "품절"], ["10186", "신일제약", 32, 0, 0, 4, 0, 0, "누락", "광주/의정부", "서호진", "서호진", "월말", "3개월", "품절"], ["10382", "엘지화학", 38, 0, 0, 0, 0, 0, "20260713", "광주/의정부", "서호진", "서호진", "20일", "당월", "품절없음"], ["10611", "쥴릭파마", 42, 4, 0, 5, 0, 0, "20260714", "광주/의정부", "최형욱", "최형욱", "월말", "15일", "품절"], ["10213", "영일제약", 54, 0, 0, 6, 2, 2, "20260713", "광주/의정부", "유아름", "유아름", "월말", "1개월", "품절"], ["10337", "위더스제약", 101, 1, 0, 3, 0, 0, "20260715", "의정부(격일발주)", "서호진", "서호진", "월말", "1개월", "품절"], ["10192", "씨엠지제약", 79, 2, 0, 6, 1, 1, "20260713", "광주/의정부", "전송이", "전송이", "월말", "1개월", "품절"], ["10184", "신신제약", 52, 0, 0, 1, 1, 1, "20260715", "광주/의정부", "서호진", "서호진", "20일", "5개월", "품절"], ["27050", "테라젠이텍스", 126, 1, 0, 5, 0, 0, "20260713", "광주/의정부", "유아름", "유아름", "월말", "1개월", "품절"], ["20408", "남양프라스", 32, 1, 0, 2, 0, 0, "누락", "광주/의정부", "서호진", "서호진", "월말", "1개월", "품절"], ["10758", "한국다이이찌", 29, 0, 0, 0, 0, 0, "20260709", "광주", "유아름", "유아름", "월말", "당월", "품절없음"], ["73165", "에이프로젠파마", 37, 0, 0, 3, 0, 0, "20260713", "광주/의정부", "서호진", "서호진", "월말", "1개월", "품절"], ["77130", "휴비스트", 72, 0, 0, 9, 2, 2, "20260708", "광주/의정부", "유아름", "유아름", "월말", "1개월", "품절"], ["10023", "갈더마", 15, 0, 0, 2, 0, 0, "누락", "광주/의정부", "전송이", "최형욱", "동원아이팜", "동원아이팜", "품절"], ["10520", "동원아이팜", 24, 1, 0, 4, 1, 1, "20260714", "광주/의정부", "1 계열사\n(최형욱,유아름)", "최형욱,유아름", 0, 0, "품절"], ["10312", "한국산텐제약", 27, 0, 0, 0, 0, 0, "누락", "광주/의정부", "최형욱", "최형욱", "아이팜코리아", "아이팜코리아", "품절없음"], ["24480", "켄뷰코리아판매", 37, 1, 0, 1, 0, 0, "20260713", "광주/의정부", "최형욱", "최형욱", "월말", "1개월", "품절"], ["16840", "보령바이오파마", 67, 1, 1, 2, 1, 2, "20260715", "광주/의정부", "유아름", "유아름", "25일", "당월", "품절"], ["10274", "초당약품", 19, 0, 0, 0, 0, 0, "20260715", "광주/의정부", "서호진", "서호진", "20일", "당월", "품절없음"], ["10322", "한국아스트라제네카", 13, 0, 0, 2, 0, 0, "누락", "광주/의정부", "유아름", "유아름", "월말", "1개월", "품절"], ["10334", "한국오츠카제약", 38, 0, 0, 4, 0, 0, "누락", "광주", "최형욱", "최형욱", "월말", "1개월", "품절"], ["10056", "넥스팜코리아", 10, 0, 0, 0, 0, 0, "누락", "광주", "예상화", "최형욱", "월말", "1개월", "품절없음"], ["21448", "한국메나리니", 22, 1, 1, 0, 0, 1, "누락", "광주/의정부", "서호진", "서호진", "월말", "1개월", "품절"], ["18756", "휴온스메디텍", 28, 1, 0, 0, 0, 0, "20260715", "광주/의정부", "유아름", "유아름", "월말", "1개월", "품절"], ["10112", "한국먼디파마", 3, 0, 0, 0, 0, 0, "누락", "광주", "전송이", "전송이", "월말", "2개월", "품절없음"], ["1044", "그린제약", 17, 0, 0, 2, 0, 0, "누락", "광주/의정부", "서호진", "김동재", "월말", "3개월", "품절"], ["25960", "킵스바이오파마", 42, 0, 0, 4, 1, 1, "20260713", "광주/의정부", "서호진", "서호진", "월말", "1개월", "품절"], ["29557", "한국다케다제약", 2, 0, 0, 1, 0, 0, "누락", "광주", "전송이", "최형욱", "월말", "2개월", "품절"], ["12355", "동원약품", 8, 0, 0, 0, 0, 0, "20260714", "광주/의정부", "1 계열사\n(전송이,유아름)", "전송이,유아름", 0, 0, "품절없음"], ["10331", "한국에자이", 13, 0, 0, 0, 0, 0, "20260714", "광주", "예상화", "전송이", "20일", "애자이", "품절없음"], ["73189", "한독테바", 13, 0, 0, 0, 0, 0, "누락", "광주", "김은경", "김은경", "월말", "1개월", "품절없음"], ["78246", "아이뷰메디", 9, 0, 0, 0, 0, 0, "20260708", "광주/의정부", "유아름", "유아름", "20일", "당월", "품절없음"], ["25245", "케이아이씨", 19, 0, 0, 1, 1, 1, "누락", "광주/의정부", "최형욱", "최형욱", "선결제", "당월", "품절"], ["10303", "한국릴리", 20, 0, 0, 3, 0, 0, "20260713", "광주/의정부", "최형욱", "최형욱", "동원아이팜", "2개월", "품절"], ["47886", "대원바이오텍", 76, 2, 0, 4, 2, 2, "20260713", "광주/의정부", "전송이", "최형욱", "월말", "1개월", "품절"], ["20673", "옵투스제약", 23, 0, 0, 2, 0, 0, "20260713", "광주/의정부", "전송이", "전송이", "월말", "1개월", "품절"], ["10328", "한국아스텔라스", 7, 0, 0, 0, 0, 0, "누락", "광주", "최형욱", "최형욱", "월말", "당월", "품절없음"], ["10034", "경풍약품", 15, 0, 0, 2, 2, 2, "누락", "광주", "예상화", "최형욱", "월말", "3개월", "품절"], ["47287", "동주팜", 15, 0, 0, 1, 0, 0, "누락", "광주/의정부", "유아름", "유아름", "월말", "1개월(재고관리)", "품절"], ["10227", "타나베파마코리아", 15, 0, 0, 0, 0, 0, "20260714", "광주/의정부", "전송이", "전송이", "월말", "당월", "품절없음"], ["48920", "보령컨슈머헬", 15, 0, 0, 0, 0, 0, "누락", "광주/의정부", "최형욱", "최형욱", "25일", "당월", "품절없음"], ["25970", "셀트리온", 32, 0, 0, 4, 4, 4, "20260708", "광주", "전송이", "최형욱", "월말", "1개월", "품절"], ["51588", "이노트로닉", 14, 0, 0, 0, 0, 0, "누락", "광주/의정부", "유아름", "유아름", "월말", "1개월(재고관리)", "품절없음"], ["77855", "이든파마", 208, 6, 0, 2, 0, 0, "20260713", "광주/의정부", "유아름", "유아름", "월말", "1개월", "품절"], ["10301", "한국로슈", 3, 0, 0, 1, 0, 0, "누락", "광주/의정부", "전송이", "최형욱", "동원아이팜", "동원아이팜", "품절"], ["10545", "밴드닥터", 17, 1, 0, 2, 2, 2, "20260715", "광주/의정부", "서호진", "서호진", "월말", "당월", "품절"], ["10309", "한국베링거인겔", 9, 0, 0, 0, 0, 0, "누락", "광주", "전송이", "전송이", "월말", "당월", "품절없음"], ["10045", "비씨월드", 12, 0, 0, 0, 0, 0, "누락", "광주", "김동재", "유아름", "20일", "당월", "품절없음"], ["79252", "라이징팜", 14, 0, 0, 0, 0, 0, "20260715", "광주", "김은경", "김은경", "월말", "1개월", "품절없음"], ["10731", "한국세르비에", 8, 0, 0, 3, 0, 0, "누락", "광주/의정부", "전송이", "전송이", "20일", "3개월", "품절"], ["10298", "한국넬슨", 5, 0, 0, 0, 0, 0, "누락", "광주/의정부", "서호진", "김동재", "월말", "1개월", "품절없음"], ["10083", "대한약품공업", 8, 0, 0, 0, 0, 0, "20260709", "광주/의정부", "김동재", "서호진", "월말", "1개월", "품절없음"], ["17098", "한국룬드벡", 15, 0, 0, 0, 0, 0, "20260714", "광주/의정부", "전송이", "전송이", "월말", "당월", "품절없음"], ["10284", "파마킹", 10, 0, 0, 0, 0, 0, "20260713", "광주/의정부", "전송이", "김동재", "월말", "1개월", "품절없음"], ["10143", "삼성제약", 46, 1, 0, 4, 0, 0, "20260713", "광주/의정부", "서호진", "서호진", "월말", "1개월", "품절"], ["10348", "한국페링", 5, 0, 0, 1, 0, 0, "20260713", "광주", "전송이", "전송이", "월말", "당월(재고관리)", "품절"], ["49888", "비앤씨코리아", 12, 1, 0, 3, 2, 2, "누락", "의정부", "최형욱", "최형욱", "선결제", "당월", "품절"], ["10140", "삼남제약", 13, 0, 0, 1, 0, 0, "20260714", "광주/의정부", "유아름", "김동재", "월말", "1개월", "품절"], ["79116", "오스코리아", 3, 0, 0, 0, 0, 0, "누락", "광주/의정부", "전송이", "김동재", "판매분결제", "판매분결제", "품절없음"], ["10296", "하원제약", 7, 0, 0, 0, 0, 0, "누락", "광주/의정부", "1 계열사\n(전송이,유아름)", "전송이,유아름", "계열사", 0, "품절없음"], ["23845", "경남제약", 12, 0, 0, 1, 0, 0, "20260713", "광주/의정부", "1 계열사\n(최형욱,유아름)", "최형욱,유아름", "동원아이팜", 0, "품절"], ["36178", "에리슨제약", 20, 0, 0, 0, 0, 0, "누락", "광주/의정부", "전송이", "최형욱", "동원아이팜", "동원아이팜", "품절없음"], ["10571", "익수제약", 10, 0, 0, 1, 1, 1, "누락", "광주/의정부", "이상연", "이상연", "판매분결제", "판매분결제", "품절"], ["48282", "제일헬스사이언스", 11, 1, 1, 1, 1, 2, "누락", "광주/의정부", "이상연", "이상연", "판매분결제", "1개월", "품절"], ["17636", "유화메디칼", 12, 0, 0, 0, 0, 0, "누락", "의정부", "최형욱", "최형욱", "선결제", "당월", "품절없음"], ["10547", "케이엠에스", 8, 1, 1, 1, 0, 1, "누락", "광주/의정부", "유아름", "김동재", "월말", "1개월", "품절"], ["23742", "태양파마", 0, 0, 0, 0, 0, 0, "누락", "광주", "김동재", "유아름", "계열사", "당월(재고관리)", "품절없음"], ["26759", "바이어스", 1, 0, 0, 1, 1, 1, "누락", "광주/의정부", "이상연", "거래종료", "월말", "1개월", "품절"], ["10168", "성원애드콕", 2, 0, 0, 0, 0, 0, "누락", "거래종료", "거래종료", "거래종료", 0, 0, "품절없음"], ["17915", "신성약품", 1, 0, 0, 0, 0, 0, "누락", "광주", "예상화", "전송이", "월말", "당월", "품절없음"], ["10327", "한국애보트", 12, 0, 0, 2, 0, 0, "누락", "광주/의정부", "전송이", "최형욱", "동원아이팜", "동원아이팜", "품절"], ["68127", "제이오팜", 3, 0, 0, 0, 0, 0, "누락", "광주/의정부", "김동재", "서호진", "20일", "당월", "품절없음"], ["75171", "지에스팜", 6, 0, 0, 0, 0, 0, "누락", "광주/의정부", "김동재", "유아름", "20일", "당월", "품절없음"], ["25776", "넥스메디칼", 3, 0, 0, 0, 0, 0, "누락", "광주/의정부", "유아름", "김동재", "월말", "1개월", "품절없음"], ["21040", "반도뉴팜", 4, 0, 0, 0, 0, 0, "누락", "광주", "예상화", "전송이", "월말", "당월(재고관리)", "품절없음"], ["48522", "강연약품", 2, 0, 0, 0, 0, 0, "누락", "광주", "예상화", "최형욱", "20일", "당월", "품절없음"], ["14500", "유정아이텍", 6, 1, 0, 2, 0, 0, "누락", "의정부", "최형욱", "최형욱", "선결제", "당월", "품절"], ["18914", "지오영", 35, 1, 0, 0, 0, 0, "20260713", "광주", "전송이", "최형욱", "월말", "당월", "품절"], ["10540", "한국위너스", 6, 1, 1, 0, 0, 1, "누락", "광주", "예상화", "전송이", "월말", "당월", "품절"], ["17622", "한국유니팜", 12, 0, 0, 1, 0, 0, "20260715", "광주/의정부", "김동재", "유아름", "20일", "당월(재고관리)", "품절"], ["17640", "한국호넥스", 5, 0, 0, 0, 0, 0, "20260713", "광주", "예상화", "전송이", "월말", "당월(재고관리)", "품절없음"], ["10518", "동원약품중부", 13, 0, 0, 1, 1, 1, "20260713", null, null, null, null, null, "품절"], ["25858", "동원약품원주지점", 7, 0, 0, 0, 0, 0, "20260715", "광주/의정부", "1 계열사\n(최형욱,유아름)", "최형욱,유아름", 0, 0, "품절없음"], ["15209", "바슈롬코리", 3, 0, 0, 0, 0, 0, "누락", "광주/의정부", "서호진", "서호진", "월말", "1개월", "품절없음"], ["10163", "새한제약", 4, 0, 0, 0, 0, 0, "누락", "광주", "예상화", "전송이", "월말", "당월(재고관리)", "품절없음"], ["15046", "엘디에스", 3, 0, 0, 0, 0, 0, "누락", "광주/의정부", "김동재", "유아름", "월말", "1개월(재고관리)", "품절없음"], ["13762", "유진약품", 4, 2, 0, 0, 0, 0, "누락", "광주/의정부", "도매상", "도매상", "월말", "1개월", "품절"], ["10744", "케이투팜", 3, 0, 0, 0, 0, 0, "20260708", "광주/의정부", "김동재", "서호진", "20일", "당월", "품절없음"], ["77550", "파마존", 8, 0, 0, 0, 0, 0, "누락", "광주/의정부", "유아름", "유아름", "20일", "당월", "품절없음"], ["10519", "경남동원", 0, 0, 0, 0, 0, 0, "누락", "광주/의정부", "1 계열사\n(최형욱,유아름)", "최형욱,유아름", 0, 0, "품절없음"], ["22799", "에이스파마", 3, 0, 0, 0, 0, 0, "누락", "광주/의정부", "김동재", "유아름", "20일", "당월", "품절없음"], ["10272", "씨에이치디제약", 4, 0, 0, 0, 0, 0, "누락", "광주", "최형욱", "최형욱", "월말", "1개월", "품절없음"], ["25812", "라이트팜텍", 25, 1, 0, 2, 0, 0, "누락", "광주/의정부", "김동재", "최형욱", "월말", "1개월", "품절"], ["50743", "한국비엠에스", 2, 0, 0, 0, 0, 0, "누락", "광주/의정부", "전송이", "최형욱", "동원아이팜", "동원아이팜", "품절없음"], ["15179", "신화제약", 2, 0, 0, 0, 0, 0, "누락", "광주", "김은경", "김은경", "판매분결제", "판매분결제", "품절없음"], ["52376", "씨앤씨헬스케어", 2, 0, 0, 0, 0, 0, "누락", "광주", "예상화", "최형욱", "월말", "1개월", "품절없음"], ["49951", "에스씨팜", 2, 0, 0, 0, 0, 0, "누락", "광주", "김동재", "유아름", "월말", "1개월(재고관리)", "품절없음"], ["74709", "한국코와", 0, 0, 0, 0, 0, 0, "누락", "광주/의정부", "이상연", "이상연", "대전동원약품", "3개월", "품절없음"], ["25362", "서울약업", 1, 0, 0, 0, 0, 0, "20260714", "광주/의정부", "도매상", "도매상", "월말", "당월", "품절없음"], ["54089", "우메딕스", 2, 0, 0, 0, 0, 0, "누락", "광주", "예상화", "전송이", "월말", "1개월", "품절없음"], ["21833", "한국파메드", 1, 0, 0, 0, 0, 0, "누락", "광주", "최형욱", "최형욱", "선결제", "당월", "품절없음"], ["61088", "비아트리스코리아", 13, 0, 0, 0, 0, 0, "누락", "광주/의정부", "최형욱", "최형욱", "월말", "당월", "품절없음"], ["21050", "로얄제이에스", 3, 0, 0, 2, 0, 0, "20260714", "광주", "예상화", "전송이", "월말", "당월", "품절"], ["68515", "마더스제약", 188, 1, 0, 5, 5, 5, "20260709", "광주/의정부", "서호진", "서호진", "월말", "1개월", "품절"], ["52060", "바이오스마트", 60, 0, 0, 3, 3, 3, "20260715", "광주/의정부", "서호진", "서호진", "판매분결제", "판매분결제", "품절"], ["27019", "구미제약", 5, 0, 0, 0, 0, 0, "누락", "광주/의정부", "최형욱", "최형욱", "판매분결제", "판매분결제", "품절없음"], ["19259", "에이치피앤씨", 3, 0, 0, 0, 0, 0, "누락", "광주", "예상화", "전송이", "월말", "당월", "품절없음"], ["59825", "케이에이치팜", 12, 0, 0, 0, 0, 0, "20260714", "광주", "김동재", "유아름", "월말", "당월(재고관리)", "품절없음"], ["45599", "로하스메디", 15, 0, 0, 1, 1, 1, "누락", "광주", "예상화", "전송이", "월말", "1개월", "품절"], ["10517", "아이팜코리아", 3, 0, 0, 0, 0, 0, "20260714", "광주/의정부", "1 계열사\n(최형욱,유아름)", "최형욱,유아름", 0, 0, "품절없음"], ["56994", "에스지메디언스", 3, 0, 0, 0, 0, 0, "20260714", "광주/의정부", "유아름", "김동재", "월말", "1개월", "품절없음"], ["10282", "지엘파마", 5, 1, 1, 0, 0, 1, "누락", "광주/의정부", "서호진", "김동재", "판매분결제", 0, "품절"], ["47586", "안국뉴팜", 20, 2, 1, 2, 0, 1, "20260714", "광주", "예상화", "전송이", "월말", "1개월", "품절"], ["24079", "킴스제약", 8, 0, 0, 0, 0, 0, "누락", "의정부", "김동재", "유아름", "월말", "당월", "품절없음"], ["66109", "에스디파마", 5, 1, 0, 0, 0, 0, "누락", "광주/의정부", "유아름", "김동재", "월말", "1개월", "품절"], ["78450", "피케이원팜", 1, 0, 0, 0, 0, 0, "누락", "광주", "예상화", "전송이", "월말", "당월", "품절없음"], ["19232", "팜월드(피엠지)", 19, 0, 0, 3, 0, 0, "20260714", "광주/의정부", "김동재", "전송이", "20일", "당월", "품절"], ["69794", "명문바이오", 20, 0, 0, 0, 0, 0, "20260713", "광주/의정부", "김동재", "서호진", "월말", "1개월", "품절없음"], ["71855", "한국오가논", 28, 0, 0, 0, 0, 0, "20260713", "광주/의정부", "전송이", "전송이", "월말", "당월", "품절없음"], ["33640", "뉴신팜(제뉴원)", 269, 3, 0, 11, 2, 2, "20260713", "광주/의정부", "김은경", "김은경", "25일", "1개월", "품절"], ["74442", "위드원바이오", 5, 0, 0, 0, 0, 0, "누락", "광주/의정부", "김동재", "김동재", "월말", "1개월", "품절없음"], ["66017", "서울파머", 1, 0, 0, 0, 0, 0, "누락", "광주/의정부", "전송이", "전송이", "판매분결제", "판매분결제", "품절없음"], ["26241", "한풍제약", 0, 0, 0, 0, 0, 0, "20260708", "광주", "예상화", "전송이", "판매분결제", 0, "품절없음"], ["75103", "티알엔", 21, 0, 0, 0, 0, 0, "누락", "광주/의정부", "김은경", "김은경", "월말", "1개월", "품절없음"], ["51041", "앱토크롬", 3, 0, 0, 0, 0, 0, "20260709", "광주/의정부", "서호진", "김동재", "월말", "1개월", "품절없음"], ["75416", "오펠라헬스케어코리아", 2, 0, 0, 0, 0, 0, "누락", "광주/의정부", "거래종료", "거래종료", "동원아이팜", "동원아이팜", "품절없음"], ["10535", "세종약품(풍림)", 12, 0, 0, 2, 1, 1, "누락", "광주", "예상화", "전송이", "25일", "당월", "품절"], ["75194", "대한쎌팜", 6, 1, 0, 1, 0, 0, "20260713", "광주/의정부", "유아름", "김동재", "월말", 0, "품절"], ["27159", "다산제약", 47, 1, 0, 5, 0, 0, "20260709", "광주/의정부", "서호진", "서호진", "판매분결제", 0, "품절"], ["72848", "건일바이오팜", 35, 3, 0, 2, 0, 0, "누락", "광주/의정부", "김동재", "최형욱", "판매분결제", 0, "품절"], ["76070", "에이치엘비", 151, 0, 0, 4, 0, 0, "20260715", "광주/의정부", "유아름", "유아름", "월말", "1개월", "품절"], ["24229", "맥널티", 14, 1, 1, 1, 1, 2, "누락", "광주", "김동재", "서호진", "월말", "1개월", "품절"], ["44878", "제이텍바이오팜", 1, 0, 0, 1, 0, 0, "20260710", "광주", "김동재", "유아름", "20일", "당월", "품절"], ["81580", "퍼슨헬스케어", 7, 0, 0, 0, 0, 0, "20260709", "광주/의정부", "김동재", "서호진", 0, 0, "품절없음"], ["70830", "에이블팜스", 27, 1, 0, 3, 0, 0, "20260708", "광주", "예상화", "최형욱", "월말", "1개월", "품절"], ["76679", "에이치에이써플라이", 10, 0, 0, 1, 0, 0, "20260713", "광주", "예상화", "전송이", "월말", "1개월", "품절"], ["61841", "바슈헬스코리아", 9, 2, 0, 0, 0, 0, "20260710", "광주/의정부", "유아름", "유아름", "동원아이팜", 0, "품절"], ["80304", "엘재이컴퍼니", 1, 0, 0, 0, 0, 0, "누락", "광주", "김동재", "최형욱", "월말", "당월", "품절없음"], ["81883", "폴라리스피에이씨", 4, 0, 0, 0, 0, 0, "누락", "광주", "김동재", "유아름", "월말", "당월", "품절없음"], ["20948", "씨티씨바이오", 25, 0, 0, 0, 0, 0, "20260710", "의정부", "유아름", "유아름", "20일", "당월", "품절없음"], ["36277", "애브비", 6, 0, 0, 0, 0, 0, "누락", "광주/의정부", "최형욱", "최형욱", "월말", "1개월", "품절없음"], ["59834", "케이에스제약", 6, 0, 0, 0, 0, 0, "20260710", "의정부", "김동재", "서호진", "월말", "당월", "품절없음"], ["25343", "서울유니온약품", 3, 0, 0, 1, 1, 1, "20260714", "광주", "예상화", "전송이", "25일", "당월", "품절"], ["81848", "지큐헬스케어", 1, 0, 0, 0, 0, 0, "누락", "의정부", "서호진", "김동재", "월말", "1개월", "품절없음"], ["83099", "대동유통", 8, 0, 0, 3, 0, 0, "누락", "광주/의정부", "김동재", "유아름", "20일", "당월", "품절"], ["74263", "디케이에스에이치", 7, 0, 0, 0, 0, 0, "누락", "광주/의정부", "유아름", "유아름", "월말", "3개월", "품절없음"], ["86872", "온힐", 2, 0, 0, 0, 0, 0, "누락", "광주/의정부", "예상화", "전송이", "월말", "당월", "품절없음"], ["87352", "브링바이오", 2, 0, 0, 0, 0, 0, "누락", null, null, null, null, null, "품절없음"], ["75859", "보광상사", 1, 0, 0, 0, 0, 0, "누락", "의정부", "김동재", "서호진", 0, 0, "품절없음"], ["84350", "팜베이", 87, 2, 0, 4, 0, 0, "20260714", "광주/의정부", "서호진", "서호진", "판매분결제", "당월", "품절"], ["90050", "시니온팜", 12, 0, 0, 0, 0, 0, "누락", "광주/의정부", "유아름", "유아름", "월말", "1개월(재고관리)", "품절없음"], ["10343", "한국코러스제약", 4, 0, 0, 0, 0, 0, "누락", "광주/의정부", "1 계열사\n(최형욱,유아름)", "최형욱,유아름", 0, 0, "품절없음"], ["10231", "유니온제약", 48, 1, 1, 1, 1, 2, "누락", "광주", "이상연", "이상연", "월말", "1개월", "품절"], ["18417", "피앤피팜", 1, 0, 0, 0, 0, 0, "20260715", "광주", "예상화", "전송이", "월말", "당월", "품절없음"], ["10063", "셀릭스", 24, 0, 0, 1, 0, 0, "20260713", "광주/의정부", "김동재", "전송이", "대전동원약품", 0, "품절"], ["81806", "오스템파마", 19, 0, 0, 2, 2, 2, "누락", "광주/의정부", "최형욱", "최형욱", "판매분결제", "판매분결제", "품절"], ["59395", "라온파마", 6, 0, 0, 1, 0, 0, "누락", "광주", "예상화", "최형욱", "월말", "1개월", "품절"], ["10356", "한림제약", 2, 2, 2, 0, 0, 2, "누락", "광주", "최형욱", "최형욱", "25일", "당월", "품절"], ["14488", "암젠코리아", 1, 0, 0, 0, 0, 0, "누락", "광주/의정부", "전송이", "최형욱", "동원아이팜", "동원아이팜", "품절없음"], [57283, "오스템임플란트", 16, 0, 0, 0, 0, 0, "20260713", "광주/의정부", "김동재", "유아름", "월말", "익월20일", "품절없음"], ["92480", "파비오스", 3, 1, 0, 0, 0, 0, "누락", "광주", "예상화", "전송이", "월말", "당월", "품절"], ["25325", "엘비아브노바", 1, 0, 0, 0, 0, 0, "누락", "광주/의정부", "1 계열사\n(전송이,유아름)", "전송이,유아름", "동원약품", 0, "품절없음"], ["94289", "더블유사이언스(지엘", 40, 1, 0, 2, 2, 2, "누락", "광주/의정부", "전송이", "전송이", "월말", "1개월", "품절"], ["94892", "한림눈건강", 54, 2, 1, 5, 1, 2, "누락", "광주/의정부", "최형욱", "최형욱", "25일", "당월", "품절"], ["95058", "젠큐", 14, 1, 1, 0, 0, 1, "누락", "광주/의정부", "김동재", "서호진", "월말", "당월", "품절"], ["10057", "노보노디스크", 7, 1, 0, 1, 0, 0, "누락", "광주/의정부", "최형욱", "최형욱", 0, 0, "품절"], ["91864", "와이피", 1, 0, 0, 0, 0, 0, "누락", "의정부", "김동재", "유아름", "월말", "당월", "품절없음"], ["91658", "피엔케이비에이치", 5, 0, 0, 0, 0, 0, "누락", "광주/의정부", "유아름", "유아름", "월말", "전월", "품절없음"], ["81037", "케이피더마", 1, 0, 0, 0, 0, 0, "누락", "광주/의정부", "김동재", "최형욱", "동원약품", 0, "품절없음"], ["95839", "피엔케이팜", 12, 1, 0, 1, 0, 0, "누락", "광주/의정부", "유아름", "유아름", "월말", "전월", "품절"], ["96967", "한풍비에스", 23, 0, 0, 2, 0, 0, "20260714", "광주", "예상화", "전송이", "판매분결제", 0, "품절"], ["96958", "아우겐코리아", 24, 0, 0, 0, 0, 0, "20260715", "광주/의정부", "예상화", "김은경", "월말", "25일", "품절없음"], ["82535", "루카에이아이셀", 1, 0, 0, 1, 1, 1, "누락", 0, "계열사", "계열사", 0, 0, "품절"]]};
-const DAMDANGJA_RAW = {"headers": ["담당자", "취급품목수", "거래처수", "품절_품목수", "품절율", "품절_발주수", "품절_발주율", "품절_미발주", "품절_미발주율", "품절예상_품목수", "품절예상율", "품절예상_발주수", "품절예상_발주율", "품절예상_미발주", "품절예상_미발주율", "품목비중", "품절비중"], "rows": [["이상연", 895, 9, 18, 0.08955223880597019, 6, 0.33333333333333337, 12, 0.013407821229050279, 85, 0.10365853658536583, 22, 0.2588235294117647, 63, 0.07039106145251396, 0.06494920174165453, 0.0013062409288824295], ["김동재", 87, 14, 4, 0.01990049751243783, 2, 0.5, 2, 0.022988505747126436, 5, 0.0060975609756097615, 5, 1, 0, 0, 0.0063134978229317795, 0.0002902757619738239], ["김은경", 1804, 18, 12, 0.05970149253731338, 9, 0.75, 3, 0.0016629711751662971, 56, 0.06829268292682922, 46, 0.8214285714285714, 10, 0.005543237250554324, 0.13091436865021766, 0.0008708272859215827], ["서호진", 3072, 43, 41, 0.20398009950248752, 29, 0.7073170731707317, 12, 0.00390625, 149, 0.18170731707317078, 96, 0.6442953020134228, 53, 0.017252604166666668, 0.22293178519593615, 0.00297532656023225], ["예상화", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, null, null, null], ["유아름", 2648, 51, 34, 0.1691542288557214, 28, 0.8235294117647058, 6, 0.0022658610271903325, 134, 0.1634146341463415, 106, 0.791044776119403, 28, 0.010574018126888218, 0.19216255442670538, 0.002467343976777947], ["전송이", 1534, 43, 38, 0.18905472636815923, 31, 0.8157894736842105, 7, 0.0045632333767926985, 136, 0.1658536585365854, 81, 0.5955882352941176, 55, 0.03585397653194263, 0.11132075471698111, 0.002757619738751771], ["최형욱", 3649, 63, 51, 0.25373134328358204, 47, 0.9215686274509804, 4, 0.0010961907371882709, 248, 0.30243902439024395, 216, 0.8709677419354839, 32, 0.008769525897506167, 0.2648040638606677, 0.0037010159651669206], ["기타\n(계열사포함)", 91, 16, 3, 0.014925373134328401, 3, 1, 0, 0, 7, 0.008536585365853666, 4, 0.5714285714285714, 3, 0.03296703296703297, 0.006603773584905714, 0.0002177068214803679], ["전체", 13780, 257, 201, 0.014586357039187203, 155, 0.7711442786069651, null, null, 820, 0.05950653120464444, 576, 0.7024390243902439, 0.7024390243902439, null, null, null]], "title": "발주 담당자별 품절현황(2026-07-22)"};
+const DAMDANGJA_RAW = {"headers": ["담당자", "취급품목수", "거래처수", "품절_품목수", "품절율", "품절_발주수", "품절_발주율", "품절_미발주", "품절_미발주율", "품절예상_품목수", "품절예상율", "품절예상_발주수", "품절예상_발주율", "품절예상_미발주", "품절예상_미발주율", "품목비중", "품절비중"], "rows": [["이상연", 895, 9, 18, 0.0895522388059702, 6, 0.333333333333333, 12, 0.0134078212290503, 85, 0.103280680437424, 22, 0.258823529411765, 63, 0.070391061452514, 0.0647237489152445], ["김동재", 87, 14, 4, 0.0199004975124378, 2, 0.5, 2, 0.0229885057471264, 5, 0.00607533414337791, 5, 1, 0, 0, 0.00629158229678917], ["김은경", 1828, 19, 12, 0.0597014925373134, 9, 0.75, 3, 0.00164113785557987, 56, 0.0680437424058323, 46, 0.821428571428571, 10, 0.00547045951859956, 0.132195545270466], ["서호진", 3072, 43, 41, 0.203980099502488, 29, 0.707317073170732, 12, 0.00390625, 149, 0.181044957472661, 96, 0.644295302013423, 53, 0.0172526041666667, 0.222157940410761], ["예상화", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, null, null, null], ["유아름", 2648, 51, 34, 0.169154228855721, 28, 0.823529411764706, 6, 0.00226586102719033, 134, 0.162818955042527, 106, 0.791044776119403, 28, 0.0105740181268882, 0.191495516343651], ["전송이", 1557, 44, 38, 0.189054726368159, 31, 0.815789473684211, 7, 0.00449582530507386, 138, 0.16767922235723, 83, 0.601449275362319, 55, 0.0353243416827232, 0.112597628001157], ["최형욱", 3649, 63, 51, 0.253731343283582, 47, 0.92156862745098, 4, 0.00109619073718827, 248, 0.301336573511543, 216, 0.870967741935484, 32, 0.00876952589750617, 0.263884871275673], ["기타\n(계열사포함)", 92, 17, 3, 0.0149253731343284, 3, 1, 0, 0, 8, 0.00972053462940459, 4, 0.5, 4, 0.0434782608695652, 0.00665316748625977], ["전체", 13828, 260, 201, 0.0145357246167197, 155, 0.771144278606965, null, null, 823, 0.0595169221868672, 578, 0.702308626974484, 0.702308626974484, null, null]], "title": "발주 담당자별 품절현황(2026-07-24)"};
 </script>
 <script>
 // ---------- config ----------
@@ -314,13 +552,12 @@ const LIST_HEADERS = [
   {key:'client', label:'거래처', editable:true},
   {key:'itemCount', label:'취급품목수', editable:true, num:true},
   {key:'stockout', label:'품절', editable:true, num:true},
-  {key:'noOrder', label:'미발주', editable:true, num:true},
+  {key:'noOrder', label:'품절미발주', editable:true, num:true},
   {key:'expected', label:'품절예상', editable:true, num:true},
-  {key:'noOrder2', label:'미발주2', editable:true, num:true},
+  {key:'noOrder2', label:'품절예상미발주', editable:true, num:true},
   {key:'totalNoOrder', label:'총미발주', editable:true, num:true},
   {key:'lastOrderDate', label:'최종발주일', editable:true},
   {key:'region', label:'배송지구분', editable:true},
-  {key:'managerPrev', label:'담당자(변경전)', editable:true},
   {key:'manager', label:'발주담당자', editable:true},
   {key:'paymentBasis', label:'결제기준일', editable:true},
   {key:'turn', label:'회전', editable:true},
@@ -331,20 +568,14 @@ const MGR_HEADERS = [
   {key:'manager', label:'담당자', editable:false},
   {key:'itemCount', label:'취급품목수', num:true},
   {key:'clientCount', label:'거래처수', num:true},
-  {key:'soCount', label:'품절 품목수', num:true, highlight:'red'},
-  {key:'soRate', label:'품절율', pct:true, bar:'red'},
-  {key:'soOrdered', label:'발주수', num:true},
-  {key:'soOrderRate', label:'발주율', pct:true},
-  {key:'soNoOrder', label:'미발주', num:true},
-  {key:'soNoOrderRate', label:'미발주율', pct:true},
-  {key:'expCount', label:'품절예상 품목수', num:true, highlight:'amber'},
-  {key:'expRate', label:'품절예상율', pct:true, bar:'amber'},
-  {key:'expOrdered', label:'발주수', num:true},
-  {key:'expOrderRate', label:'발주율', pct:true},
-  {key:'expNoOrder', label:'미발주', num:true},
-  {key:'expNoOrderRate', label:'미발주율', pct:true},
-  {key:'itemShare', label:'품목 비중', pct:true},
-  {key:'soShare', label:'품절 비중', pct:true},
+  {key:'soCount', label:'품목수', num:true, group:'품절 현황'},
+  {key:'soRate', label:'품절율', pct:true, bar:'red', group:'품절 현황'},
+  {key:'soOrdered', label:'발주수', num:true, group:'품절 현황'},
+  {key:'soOrderRate', label:'발주율', pct:true, group:'품절 현황'},
+  {key:'expCount', label:'품목수', num:true, group:'품절예상 현황'},
+  {key:'expRate', label:'품절예상율', pct:true, bar:'amber', group:'품절예상 현황'},
+  {key:'expOrdered', label:'발주수', num:true, group:'품절예상 현황'},
+  {key:'expOrderRate', label:'발주율', pct:true, group:'품절예상 현황'},
 ];
 
 // map raw row arrays (from openpyxl export) -> keyed objects matching headers above
@@ -375,24 +606,42 @@ let sortState = { list: {key:null, dir:1}, mgr: {key:null, dir:1} };
 const STORAGE_KEY = 'stockout_dashboard_edits_v1';
 
 // ---------- storage ----------
+// 공유 저장소(shared=true)를 사용합니다 — 즉 누군가 저장을 누르면 이 대시보드를 보는 모든 사람에게 그 데이터가 보입니다.
 async function loadEdits(){
   try{
-    const res = await window.storage.get(STORAGE_KEY, false);
+    const res = await window.storage.get(STORAGE_KEY, true);
     if(res && res.value) return JSON.parse(res.value);
   }catch(e){ /* no saved edits yet */ }
   return null;
 }
 let saveTimer = null;
+let lastSavedAt = null;
+function formatSavedTime(iso){
+  if(!iso) return '';
+  return new Date(iso).toLocaleString('ko-KR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+}
+function updateGlobalSavedLabel(){
+  const el = document.getElementById('lastSavedGlobal');
+  if(!el) return;
+  if(!lastSavedAt){ el.textContent = '아직 저장 이력 없음'; el.classList.remove('fresh'); return; }
+  el.textContent = `마지막 저장 ${formatSavedTime(lastSavedAt)}`;
+  el.classList.add('fresh');
+}
+async function saveNow(){
+  setIndicator('saving');
+  try{
+    const now = new Date().toISOString();
+    const payload = JSON.stringify({ list: listData, mgr: mgrData, savedAt: now });
+    const res = await window.storage.set(STORAGE_KEY, payload, true);
+    if(res){ lastSavedAt = now; updateGlobalSavedLabel(); }
+    setIndicator(res ? 'saved' : 'error');
+    return !!res;
+  }catch(e){ setIndicator('error'); return false; }
+}
 function scheduleSave(){
   setIndicator('saving');
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(async ()=>{
-    try{
-      const payload = JSON.stringify({ list: listData, mgr: mgrData, savedAt: new Date().toISOString() });
-      const res = await window.storage.set(STORAGE_KEY, payload, false);
-      setIndicator(res ? 'saved' : 'error');
-    }catch(e){ setIndicator('error'); }
-  }, 400);
+  saveTimer = setTimeout(saveNow, 400);
 }
 function setIndicator(state){
   const els = [
@@ -403,7 +652,7 @@ function setIndicator(state){
     if(!dot) return;
     dot.classList.remove('saved','saving');
     if(state==='saving'){ dot.classList.add('saving'); label.textContent='저장 중...'; }
-    else if(state==='saved'){ dot.classList.add('saved'); label.textContent='저장됨 · 이 브라우저'; }
+    else if(state==='saved'){ dot.classList.add('saved'); label.textContent='저장됨 · ' + formatSavedTime(lastSavedAt); }
     else if(state==='error'){ label.textContent='저장 실패'; }
     else { label.textContent='대기 중'; }
   });
@@ -411,15 +660,18 @@ function setIndicator(state){
 
 // ---------- init ----------
 async function init(){
+  initStorageBanner();
   const saved = await loadEdits();
   if(saved && saved.list && saved.list.length){
     listData = saved.list;
     mgrData = saved.mgr && saved.mgr.length ? saved.mgr : JSON.parse(JSON.stringify(ORIGINAL_MGR));
+    if(saved.savedAt) lastSavedAt = saved.savedAt;
     setIndicator('saved');
   } else {
     listData = JSON.parse(JSON.stringify(ORIGINAL_LIST));
     mgrData = JSON.parse(JSON.stringify(ORIGINAL_MGR));
   }
+  updateGlobalSavedLabel();
   document.getElementById('dataDate').textContent = (DAMDANGJA_RAW.title || '').match(/\d{4}-\d{2}-\d{2}/)?.[0] || '2026-07-22';
 
   buildFilterOptions();
@@ -431,35 +683,68 @@ async function init(){
 
 function buildFilterOptions(){
   const managers = [...new Set(listData.map(r=>r.manager).filter(Boolean))].sort();
-  const regions = [...new Set(listData.map(r=>r.region).filter(v=>v && v!==0))].sort();
+  const payments = [...new Set(listData.map(r=>r.paymentBasis).filter(v=>v && v!==0))].sort();
   const mSel = document.getElementById('managerFilter');
+  const prevManager = mSel.value;
+  mSel.querySelectorAll('option:not(:first-child)').forEach(o=>o.remove());
   managers.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; mSel.appendChild(o); });
-  const rSel = document.getElementById('regionFilter');
-  regions.forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; rSel.appendChild(o); });
+  if(managers.includes(prevManager)) mSel.value = prevManager;
+  const pSel = document.getElementById('paymentFilter');
+  const prevPayment = pSel.value;
+  pSel.querySelectorAll('option:not(:first-child)').forEach(o=>o.remove());
+  payments.forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; pSel.appendChild(o); });
+  if(payments.includes(prevPayment)) pSel.value = prevPayment;
 }
 
 // ---------- KPI ----------
 function renderKpis(){
-  const total = listData.length;
-  const soCount = listData.filter(r=>r.status==='품절').length;
   const soSum = listData.reduce((a,r)=>a+(Number(r.stockout)||0),0);
+  const soNoOrderSum = listData.reduce((a,r)=>a+(Number(r.noOrder)||0),0);
+  const soOrderedSum = soSum - soNoOrderSum;
+
   const expSum = listData.reduce((a,r)=>a+(Number(r.expected)||0),0);
-  const itemSum = listData.reduce((a,r)=>a+(Number(r.itemCount)||0),0);
-  const managers = new Set(listData.map(r=>r.manager).filter(Boolean)).size;
-  const rate = total ? (soCount/total*100) : 0;
+  const expNoOrderSum = listData.reduce((a,r)=>a+(Number(r.noOrder2)||0),0);
+  const expOrderedSum = expSum - expNoOrderSum;
+
+  const soRate = soSum ? (soOrderedSum/soSum*100) : 0;
+  const expRate = expSum ? (expOrderedSum/expSum*100) : 0;
 
   const kpis = [
-    {label:'전체 품절', val: soSum.toLocaleString(), cls:'red'},
-    {label:'품절율', val: rate.toFixed(1)+'%', cls:'red'},
-    {label:'전체 품절예상', val: expSum.toLocaleString(), cls:'amber'},
-    {label:'전체 사용품목', val: itemSum.toLocaleString(), cls:'teal'},
-    {label:'담당자 수', val: managers.toLocaleString(), cls:''},
+    {label:'전체 품절', val: soSum.toLocaleString(), cls:'red', icon:'🔴'},
+    {label:'품절 발주수량', val: soOrderedSum.toLocaleString(), cls:'red', icon:'📮'},
+    {label:'품절발주율', val: soRate.toFixed(1)+'%', cls:'red rate', icon:'📊'},
+    {label:'품절예상', val: expSum.toLocaleString(), cls:'amber', icon:'🟡'},
+    {label:'품절예상 발주수량', val: expOrderedSum.toLocaleString(), cls:'amber', icon:'📮'},
+    {label:'품절예상발주율', val: expRate.toFixed(1)+'%', cls:'amber rate', icon:'📊'},
   ];
   document.getElementById('kpiRow').innerHTML = kpis.map(k=>`
     <div class="kpi ${k.cls}">
+      <div class="icon">${k.icon}</div>
       <div class="label">${k.label}</div>
       <div class="val">${k.val}</div>
     </div>`).join('');
+}
+
+function escapeAttr(s){
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+function buildClientTip(r){
+  const lines = [
+    `담당자: ${r.manager || '-'}`,
+    `배송지: ${r.region || '-'}`,
+    `결제기준일: ${r.paymentBasis || '-'} · 회전: ${r.turn || '-'}`,
+    `최종발주일: ${r.lastOrderDate || '-'}`,
+    `취급품목수: ${r.itemCount ?? '-'}`,
+    `품절 ${r.stockout ?? 0} (미발주 ${r.noOrder ?? 0}) · 품절예상 ${r.expected ?? 0} (미발주 ${r.noOrder2 ?? 0})`,
+    `상태: ${r.status || '-'}`,
+  ];
+  return escapeAttr(lines.join('\n'));
+}
+
+function sortArrow(tableKey, colKey){
+  const s = sortState[tableKey];
+  if(s.key !== colKey) return '';
+  return `<span class="arrow">${s.dir===1?'▲':'▼'}</span>`;
 }
 
 // ---------- list table ----------
@@ -482,13 +767,13 @@ function renderListTable(){
   const q = document.getElementById('searchInput').value.trim().toLowerCase();
   const mgrF = document.getElementById('managerFilter').value;
   const stF = document.getElementById('statusFilter').value;
-  const rgF = document.getElementById('regionFilter').value;
+  const payF = document.getElementById('paymentFilter').value;
 
   let rows = listData.map((r, idx)=>({r, idx})).filter(({r})=>{
     if(q && !(String(r.code).toLowerCase().includes(q) || String(r.client||'').toLowerCase().includes(q))) return false;
     if(mgrF && r.manager !== mgrF) return false;
     if(stF && r.status !== stF) return false;
-    if(rgF && r.region !== rgF) return false;
+    if(payF && r.paymentBasis !== payF) return false;
     return true;
   });
 
@@ -515,6 +800,11 @@ function renderListTable(){
             <option value="품절없음" ${v==='품절없음'?'selected':''}>품절없음</option>
           </select>
         </td>`;
+      }
+      if(h.key === 'client'){
+        const tip = buildClientTip(r);
+        const val = r.client ?? '';
+        return `<td class="editable" contenteditable="true" data-idx="${idx}" data-key="client"><span class="client-tip" data-tip="${tip}">${val}</span></td>`;
       }
       const val = r[h.key];
       const display = (val===null || val===undefined) ? '' : val;
@@ -560,12 +850,31 @@ function onListCellEdit(e){
 // ---------- manager table ----------
 function renderMgrTable(){
   const head = document.getElementById('mgrHead');
-  head.innerHTML = MGR_HEADERS.map(h=>{
-    let arrow = '';
-    if(sortState.mgr.key === h.key) arrow = `<span class="arrow">${sortState.mgr.dir===1?'▲':'▼'}</span>`;
-    return `<th data-key="${h.key}">${h.label}${arrow}</th>`;
-  }).join('');
-  head.querySelectorAll('th').forEach(th=>{
+  // build group row: consecutive headers sharing the same `group` get colspan'd together;
+  // ungrouped headers (담당자/취급품목수/거래처수) span both header rows via rowspan.
+  const groupRowCells = [];
+  const subRowCells = [];
+  let i = 0;
+  while(i < MGR_HEADERS.length){
+    const h = MGR_HEADERS[i];
+    if(!h.group){
+      groupRowCells.push(`<th rowspan="2" data-key="${h.key}">${h.label}${sortArrow('mgr', h.key)}</th>`);
+      i++;
+    } else {
+      let span = 0;
+      const groupName = h.group;
+      while(i+span < MGR_HEADERS.length && MGR_HEADERS[i+span].group === groupName) span++;
+      const cls = groupName.includes('예상') ? 'grp-amber' : 'grp-red';
+      groupRowCells.push(`<th colspan="${span}" class="grp-head ${cls}">${groupName}</th>`);
+      for(let j=i; j<i+span; j++){
+        const gh = MGR_HEADERS[j];
+        subRowCells.push(`<th data-key="${gh.key}" class="${cls}">${gh.label}${sortArrow('mgr', gh.key)}</th>`);
+      }
+      i += span;
+    }
+  }
+  head.innerHTML = `<tr>${groupRowCells.join('')}</tr><tr>${subRowCells.join('')}</tr>`;
+  head.querySelectorAll('th[data-key]').forEach(th=>{
     th.addEventListener('click', ()=>{
       const key = th.dataset.key;
       if(sortState.mgr.key === key) sortState.mgr.dir *= -1;
@@ -593,7 +902,10 @@ function renderMgrTable(){
     return `<tr class="${isTotal?'total-row':''}" data-idx="${idx}">` + MGR_HEADERS.map(h=>{
       const val = r[h.key];
       if(h.key==='manager'){
-        return `<td>${val ?? ''}</td>`;
+        const name = String(val ?? '');
+        if(isTotal) return `<td>${name}</td>`;
+        const initial = name.replace(/[\s\n].*$/,'').slice(0,1) || '?';
+        return `<td><div class="mgr-name"><span class="mgr-avatar">${initial}</span><span>${name}</span></div></td>`;
       }
       if(h.pct){
         const pctVal = (Number(val)||0)*100;
@@ -641,16 +953,31 @@ function bindGlobalEvents(){
     });
   });
 
-  ['searchInput','managerFilter','statusFilter','regionFilter'].forEach(id=>{
+  ['searchInput','managerFilter','statusFilter','paymentFilter'].forEach(id=>{
     document.getElementById(id).addEventListener('input', renderListTable);
     document.getElementById(id).addEventListener('change', renderListTable);
+  });
+
+  document.getElementById('saveBtn').addEventListener('click', async ()=>{
+    const btn = document.getElementById('saveBtn');
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '저장 중...';
+    clearTimeout(saveTimer);
+    const ok = await saveNow();
+    // 업로드된 원본 시트(품절data/최종발주일/3개월사용품목/발주담당자)도 함께 최신 상태로 다시 저장해 유실을 방지합니다.
+    try{ await Promise.all(Object.keys(uploadState).map(id => saveUpload(id))); }catch(e){}
+    btn.textContent = ok ? '✓ 저장 완료' : '⚠ 저장 실패';
+    setTimeout(()=>{ btn.textContent = original; btn.disabled = false; }, 1500);
   });
 
   document.getElementById('resetBtn').addEventListener('click', async ()=>{
     if(!confirm('수정한 내용을 모두 지우고 원본 데이터로 되돌릴까요?')) return;
     listData = JSON.parse(JSON.stringify(ORIGINAL_LIST));
     mgrData = JSON.parse(JSON.stringify(ORIGINAL_MGR));
-    try{ await window.storage.delete(STORAGE_KEY, false); }catch(e){}
+    try{ await window.storage.delete(STORAGE_KEY, true); }catch(e){}
+    lastSavedAt = null;
+    updateGlobalSavedLabel();
     setIndicator('idle');
     renderKpis(); renderListTable(); renderMgrTable();
   });
@@ -681,6 +1008,7 @@ const UPLOAD_CONFIGS = {
   pumjeoldata: { sheetNames: ['품절data','품절 data','품절 Data'], storageKey: 'stockout_dashboard_upload_pumjeoldata_v1', label: '품절data' },
   finalorder:  { sheetNames: ['최종발주일'], storageKey: 'stockout_dashboard_upload_finalorder_v1', label: '최종발주일' },
   usage3m:     { sheetNames: ['3개월사용품목'], storageKey: 'stockout_dashboard_upload_usage3m_v1', label: '3개월사용품목' },
+  ordermgr:    { sheetNames: ['발주담당자'], storageKey: 'stockout_dashboard_upload_ordermgr_v1', label: '발주담당자', headerHint: '매입처명' },
 };
 const uploadState = {}; // id -> { headers, rows, page, pageSize, sort:{key,dir}, filtered }
 
@@ -693,7 +1021,16 @@ function findSheet(workbook, names){
 
 // pick the header row: compare non-empty cell counts of first two rows.
 // group-header rows (row 1) are usually sparser than the real header row (row 2).
-function detectHeaderRow(aoa){
+// If a headerHint keyword is given (for sheets with legend rows before the real header,
+// e.g. 발주담당자), scan the first 20 rows for one containing that keyword instead.
+function detectHeaderRow(aoa, headerHint){
+  if(headerHint){
+    for(let i=0; i<Math.min(20, aoa.length); i++){
+      if(aoa[i].some(v => v!==null && String(v).includes(headerHint))){
+        return { headerIdx: i, dataStart: i+1 };
+      }
+    }
+  }
   if(aoa.length < 2) return { headerIdx: 0, dataStart: 1 };
   const row0Filled = aoa[0].filter(v=>v!==null && v!=='' && v!==undefined).length;
   const row1Filled = aoa[1].filter(v=>v!==null && v!=='' && v!==undefined).length;
@@ -708,7 +1045,7 @@ async function handleFile(id, file){
   const sheetName = findSheet(wb, cfg.sheetNames);
   const ws = wb.Sheets[sheetName];
   const aoa = XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:null });
-  const { headerIdx, dataStart } = detectHeaderRow(aoa);
+  const { headerIdx, dataStart } = detectHeaderRow(aoa, cfg.headerHint);
   const rawHeaders = aoa[headerIdx].map((h,i)=> (h===null||h==='') ? ('열'+(i+1)) : String(h));
   const rows = aoa.slice(dataStart).filter(r => r.some(v => v!==null && v!==''));
 
@@ -722,33 +1059,44 @@ async function handleFile(id, file){
   if(id === 'pumjeoldata') recomputeFromPumjeoldata();
   if(id === 'finalorder') recomputeFromFinalOrder();
   if(id === 'usage3m') recomputeFromUsage3m();
+  if(id === 'ordermgr') recomputeFromManager();
 }
 
 async function saveUpload(id){
   const cfg = UPLOAD_CONFIGS[id];
   const st = uploadState[id];
   try{
-    await window.storage.set(cfg.storageKey, JSON.stringify({
-      headers: st.headers, rows: st.rows, sheetUsed: st.sheetUsed, uploadedAt: st.uploadedAt, fileName: st.fileName
-    }), false);
+    const now = new Date().toISOString();
+    const res = await window.storage.set(cfg.storageKey, JSON.stringify({
+      headers: st.headers, rows: st.rows, sheetUsed: st.sheetUsed, uploadedAt: st.uploadedAt, fileName: st.fileName, savedAt: now
+    }), true);
+    if(res){
+      st.savedAt = now;
+      lastSavedAt = now;
+      updateGlobalSavedLabel();
+      updateUploadMeta(id);
+    }
   }catch(e){ /* best effort */ }
 }
 
 async function loadUploadFromStorage(id){
   const cfg = UPLOAD_CONFIGS[id];
   try{
-    const res = await window.storage.get(cfg.storageKey, false);
+    const res = await window.storage.get(cfg.storageKey, true);
     if(res && res.value){
       const parsed = JSON.parse(res.value);
       uploadState[id] = {
         headers: parsed.headers, rows: parsed.rows, page:0, pageSize:50,
-        sort:{key:null,dir:1}, sheetUsed: parsed.sheetUsed, uploadedAt: parsed.uploadedAt, fileName: parsed.fileName
+        sort:{key:null,dir:1}, sheetUsed: parsed.sheetUsed, uploadedAt: parsed.uploadedAt, fileName: parsed.fileName,
+        savedAt: parsed.savedAt || parsed.uploadedAt
       };
+      if(parsed.savedAt && (!lastSavedAt || parsed.savedAt > lastSavedAt)){ lastSavedAt = parsed.savedAt; updateGlobalSavedLabel(); }
       renderUploadTable(id);
       updateUploadMeta(id);
       if(id === 'pumjeoldata') recomputeFromPumjeoldata();
       if(id === 'finalorder') recomputeFromFinalOrder();
       if(id === 'usage3m') recomputeFromUsage3m();
+      if(id === 'ordermgr') recomputeFromManager();
     }
   }catch(e){ /* nothing saved yet */ }
 }
@@ -767,7 +1115,8 @@ function updateUploadMeta(id){
     return;
   }
   const dt = new Date(st.uploadedAt);
-  meta.innerHTML = `<b>${st.fileName}</b> · ${st.sheetUsed} 시트 · ${st.rows.length.toLocaleString()}행 · ${dt.toLocaleString('ko-KR')} 업로드`;
+  const savedPart = st.savedAt ? ` · <span style="color:var(--teal-ink); font-weight:700;">최종 저장 ${formatSavedTime(st.savedAt)}</span>` : '';
+  meta.innerHTML = `<b>${st.fileName}</b> · ${st.sheetUsed} 시트 · ${st.rows.length.toLocaleString()}행 · ${dt.toLocaleString('ko-KR')} 업로드${savedPart}`;
   clearBtn.style.display = 'inline-flex';
   toolbar.style.display = 'flex';
   scroll.style.display = 'block';
@@ -880,7 +1229,7 @@ function bindUploadTab(id){
   document.getElementById('clear-' + id).addEventListener('click', async ()=>{
     if(!confirm(UPLOAD_CONFIGS[id].label + ' 업로드 데이터를 지울까요? 목록/담당자별 현황도 원본 값으로 되돌아갑니다.')) return;
     delete uploadState[id];
-    try{ await window.storage.delete(UPLOAD_CONFIGS[id].storageKey, false); }catch(e){}
+    try{ await window.storage.delete(UPLOAD_CONFIGS[id].storageKey, true); }catch(e){}
     updateUploadMeta(id);
     if(id === 'pumjeoldata'){
       listData.forEach((row, i)=>{
@@ -898,6 +1247,16 @@ function bindUploadTab(id){
     if(id === 'usage3m'){
       listData.forEach((row, i)=>{ row.itemCount = ORIGINAL_LIST[i].itemCount; });
       recomputeManagerSummary();
+      renderKpis(); renderListTable(); renderMgrTable(); scheduleSave();
+    }
+    if(id === 'ordermgr'){
+      listData.forEach((row, i)=>{
+        const o = ORIGINAL_LIST[i];
+        row.managerPrev = o.managerPrev; row.manager = o.manager;
+        row.paymentBasis = o.paymentBasis; row.turn = o.turn; row.region = o.region;
+      });
+      recomputeManagerSummary();
+      buildFilterOptions();
       renderKpis(); renderListTable(); renderMgrTable(); scheduleSave();
     }
   });
@@ -1080,31 +1439,119 @@ function recomputeFromUsage3m(){
   const banner = document.getElementById('meta-usage3m');
   if(!up) return;
   const headers = up.headers;
-  // 원본 워크북의 '취급품목수' 계산은 COUNTIFS('3개월사용품목'!A, 거래처) — 즉 이름 없는 1번째 열(수기/집계용 보조열)을 씁니다.
-  // 이 열은 '우선처'라는 이름의 열과는 다르며(우선처는 전체 행에 다 채워져 있고, 1번째 열은 실제로 "사용" 처리된 행에만 채워짐),
-  // 원본 파일 구조를 그대로 유지한 업로드에서만 정확합니다. 보조열이 없는 형태(1번째 열이 이미 '코드' 등 실제 데이터인 경우)라면
-  // 이름이 있는 '우선처' 열로 근사 계산합니다 (다소 부정확할 수 있어요).
-  const hasHelperCol = /^열\d+$/.test(headers[0] || '');
-  const idxAB = hasHelperCol ? 0 : headers.indexOf('우선처');
-  if(idxAB === -1){
-    banner.innerHTML += ' <span style="color:var(--red)">⚠ 거래처를 식별할 컬럼을 찾지 못해 취급품목수를 갱신하지 못했어요.</span>';
+
+  // 거래처 식별: '우선처' 컬럼 기준으로 사용품목수를 집계합니다.
+  const idxClient = findHeaderIndex(headers, '우선처');
+  if(idxClient === -1){
+    banner.innerHTML += ' <span style="color:var(--red)">⚠ "우선처" 컬럼을 찾지 못해 취급품목수를 갱신하지 못했어요.</span>';
     return;
   }
+
+  // 사용여부 판정: 헤더에 "매출", "매입", "가용"이라는 단어가 들어간 컬럼(純매출/純매입 계열, 現가용)을 모두 찾아
+  // 그 값의 합이 양수인 행만 "사용 품목"으로 보고 우선처별 개수를 집계합니다.
+  // (날짜/가격/비율 컬럼 오매칭을 피하기 위해 "純매출"·"純매입"·"가용" 패턴으로 매칭합니다 — 예: 05純매출, 06純매출, 07純매입, 現가용 등)
+  const norm = s => String(s ?? '').replace(/\s+/g,'');
+  const findCols = (...keywords) => headers
+    .map((h,i)=>({h:norm(h), i}))
+    .filter(({h}) => keywords.some(k => h.includes(k)))
+    .map(({i}) => i);
+  const idxUsage = findCols('純매출','純매입','가용');
+  const usageColLabels = idxUsage.map(i=>headers[i]);
+  const hasUsageCols = idxUsage.length > 0;
+
+  const toNum = v => { const n = Number(String(v ?? '').replace(/,/g,'')); return isNaN(n) ? 0 : n; };
+  const rowQualifies = r => {
+    if(idxUsage.length === 0) return true; // 기준 컬럼을 하나도 못 찾으면 필터링 없이 전체 행 반영
+    const sum = idxUsage.reduce((a,i)=>a+toNum(r[i]),0);
+    return sum > 0;
+  };
+
   const itemCount = {};
+  let totalRows = 0, qualifiedRows = 0;
   up.rows.forEach(r=>{
-    const client = r[idxAB];
+    const client = r[idxClient];
     if(!client) return;
+    totalRows++;
+    if(!rowQualifies(r)) return;
+    qualifiedRows++;
     itemCount[client] = (itemCount[client]||0) + 1;
   });
   listData.forEach(row=>{ row.itemCount = itemCount[row.client] || 0; });
   recomputeManagerSummary();
   renderKpis(); renderListTable(); renderMgrTable();
   scheduleSave();
-  if(hasHelperCol){
-    banner.innerHTML += ' <span style="color:var(--teal)">✓ 취급품목수가 목록·담당자별 현황에 반영됨</span>';
+
+  let msg = ' <span style="color:var(--teal)">✓ 취급품목수(우선처 기준)가 목록·담당자별 현황에 반영됨';
+  if(hasUsageCols){
+    msg += ` · "${usageColLabels.join(', ')}" 합이 양수인 ${qualifiedRows.toLocaleString()}행만 반영 (업로드 전체 ${totalRows.toLocaleString()}행 중)`;
   } else {
-    banner.innerHTML += ' <span style="color:var(--amber)">✓ "우선처" 열 기준으로 근사 계산했어요 (원본과 소폭 차이가 날 수 있어요)</span>';
+    msg += ' · ⚠ "매출"/"매입"/"가용" 관련 컬럼을 찾지 못해 필터링 없이 전체 행을 반영했어요';
   }
+  msg += '</span>';
+  banner.innerHTML += msg;
+}
+
+function findHeaderIndex(headers, ...candidates){
+  for(const c of candidates){
+    const i = headers.indexOf(c);
+    if(i !== -1) return i;
+  }
+  // fallback: normalize whitespace/newlines and try substring containment
+  const norm = s => String(s).replace(/\s+/g,'');
+  for(const c of candidates){
+    const target = norm(c);
+    const i = headers.findIndex(h => norm(h).includes(target) || target.includes(norm(h)));
+    if(i !== -1) return i;
+  }
+  return -1;
+}
+
+function recomputeFromManager(){
+  const up = uploadState['ordermgr'];
+  const banner = document.getElementById('meta-ordermgr');
+  if(!up) return;
+  const headers = up.headers;
+  const idxCode = findHeaderIndex(headers, '다미스코드', '코드');
+  const idxClient = findHeaderIndex(headers, '매입처명', '거래처');
+  // 담당자 컬럼: "발주담당(변경후)"가 있으면 그 값을 최종 담당자로 쓰고,
+  // 없으면 "발주담당(변경전)"이든 그냥 "발주담당"이든 "발주담당"이 들어간 컬럼을 찾아 그 값을 그대로 새 담당자로 반영합니다.
+  // (엑셀에 변경전/변경후 구분이 없어도 업로드한 값이 곧 새 담당자가 됩니다.)
+  let idxManager = findHeaderIndex(headers, '발주담당\n(변경후)', '발주담당(변경후)', '발주담당변경후');
+  if(idxManager === -1){
+    const norm = s => String(s ?? '').replace(/\s+/g,'');
+    idxManager = headers.findIndex(h => norm(h).includes('발주담당'));
+  }
+  const idxPay = findHeaderIndex(headers, '결제기준일');
+  const idxTurn = findHeaderIndex(headers, '회전');
+  const idxRegion = findHeaderIndex(headers, '배송지');
+  if(idxClient === -1 && idxCode === -1){
+    banner.innerHTML += ' <span style="color:var(--red)">⚠ "매입처명"(또는 "다미스코드") 컬럼을 찾지 못해 담당자 정보를 갱신하지 못했어요.</span>';
+    return;
+  }
+  if(idxManager === -1){
+    banner.innerHTML += ' <span style="color:var(--red)">⚠ "발주담당" 관련 컬럼을 찾지 못해 담당자를 갱신하지 못했어요.</span>';
+    return;
+  }
+  const byCode = {}, byClient = {};
+  up.rows.forEach(r=>{
+    if(idxCode !== -1 && r[idxCode]) byCode[String(r[idxCode]).trim()] = r;
+    if(idxClient !== -1 && r[idxClient]) byClient[r[idxClient]] = r;
+  });
+  let matched = 0;
+  listData.forEach(row=>{
+    const r = (idxCode !== -1 && byCode[String(row.code).trim()]) || byClient[row.client];
+    if(!r) return;
+    matched++;
+    row.manager = r[idxManager];
+    if(idxPay !== -1 && r[idxPay] !== undefined && r[idxPay] !== null && r[idxPay] !== '') row.paymentBasis = r[idxPay];
+    if(idxTurn !== -1 && r[idxTurn] !== undefined && r[idxTurn] !== null && r[idxTurn] !== '') row.turn = r[idxTurn];
+    if(idxRegion !== -1 && r[idxRegion] !== undefined && r[idxRegion] !== null && r[idxRegion] !== '') row.region = r[idxRegion];
+  });
+  recomputeManagerSummary();
+  renderKpis(); renderListTable(); renderMgrTable();
+  buildFilterOptions();
+  scheduleSave();
+  banner.innerHTML += ` <span style="color:var(--teal)">✓ 발주담당자가 ${matched.toLocaleString()}개 거래처에 반영됨</span>`;
 }
 
 init();

@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>바코드 스캔 — 재고위치 조회</title>
+<style>
+  :root{
+    --bg:#eef1f7; --panel:#ffffff; --panel-2:#f2f5fa; --line:#dde3ec; --line-strong:#c7cfdc;
+    --ink:#131b2c; --ink-dim:#4c5a72; --ink-faint:#8592a6;
+    --red:#d1483f; --red-bg:rgba(209,72,63,0.10);
+    --teal:#2f5fd6; --teal-ink:#24469f; --teal-bg:rgba(47,95,214,0.09);
+    --accent:#2f5fd6;
+    --radius:12px;
+    --sans:"Pretendard",-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR",sans-serif;
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); line-height:1.5;}
+  .wrap{max-width:640px; margin:0 auto; padding:16px 16px 60px;}
+  h1{font-size:19px; font-weight:800; margin:4px 0 2px;}
+  .sub{color:var(--ink-dim); font-size:13px; margin-bottom:18px;}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:16px; box-shadow:0 1px 3px rgba(19,27,44,0.05);}
+  .sub-section-title{font-size:15px; font-weight:800; margin-bottom:10px;}
+  .foot-note{font-size:12.5px; color:var(--ink-faint); line-height:1.6;}
+  .btn{appearance:none; border:1px solid var(--line-strong); background:var(--panel-2); color:var(--ink); border-radius:9px; padding:9px 14px; font-size:14px; font-weight:600; cursor:pointer;}
+  .btn:active{transform:translateY(1px);}
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .btn.danger{background:var(--red-bg); border-color:var(--red); color:var(--red);}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+  .upload-drop{display:flex; align-items:center; gap:8px; border:1px dashed var(--line-strong); border-radius:9px; padding:10px 12px; cursor:pointer; font-size:13.5px; color:var(--ink-dim); background:var(--panel-2);}
+  input[type="text"]{background:var(--panel); border:1px solid var(--line-strong); color:var(--ink); border-radius:8px; padding:9px 12px; font-size:14px;}
+  .save-indicator{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-faint);}
+  .save-dot{width:7px; height:7px; border-radius:50%; background:var(--ink-faint);}
+  .save-dot.saved{background:#2fa876;}
+  .save-dot.saving{background:#c1791b;}
+  .save-dot.error{background:var(--red);}
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  th,td{border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;}
+  th{color:var(--ink-faint); font-weight:700; position:sticky; top:0; background:var(--panel);}
+  .table-scroll{max-height:280px; overflow:auto; border:1px solid var(--line); border-radius:8px; margin-top:10px;}
+  .count-badge{font-size:12px; color:var(--ink-faint); background:var(--panel-2); border-radius:20px; padding:2px 10px;}
+  #barcodeResultWrap{background:var(--panel-2); border-radius:10px; padding:14px;}
+  .result-label{font-size:11.5px; color:var(--ink-faint); margin-bottom:2px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📷 바코드 스캔 — 재고위치 조회</h1>
+  <div class="sub">동원헬스케어 구매부 · 로케이션DB 기반</div>
+
+  <!-- ================= 로케이션DB 관리 ================= -->
+  <div class="panel">
+    <div class="sub-section-title">📦 로케이션DB</div>
+    <div class="foot-note" style="margin-bottom:10px;">
+      엑셀/CSV로 올려주세요 · 필수 열: <b>표준코드</b>(또는 바코드) · 선택 열: 바코드1~바코드5, 상품명, 재고위치, 분리보관장소, 보관방법, 가용재고 ·
+      같은 표준코드로 다시 올리면 예전 내용을 덮어써요 · 여기서 저장한 내용은 이 링크를 쓰는 모든 사람·기기에 공유돼요.
+    </div>
+    <div class="row">
+      <label class="upload-drop" for="locFile">📁 파일 선택 (.xlsx / .xls / .csv)</label>
+      <input type="file" id="locFile" accept=".xlsx,.xls,.csv" hidden>
+      <button class="btn primary" id="locSaveBtn" style="display:none;">💾 저장</button>
+      <button class="btn danger" id="locClearBtn" style="display:none;">데이터 지우기</button>
+    </div>
+    <div class="row" style="margin-top:10px;">
+      <div class="foot-note" id="locMeta">아직 업로드된 데이터가 없어요</div>
+      <div class="save-indicator" id="locSaveIndicator" style="display:none;"><span class="save-dot" id="locSaveDot"></span><span id="locSaveLabel">대기 중</span></div>
+    </div>
+    <div class="row" style="margin-top:12px;">
+      <input type="text" id="locSearch" placeholder="미리보기 검색..." style="flex:1; display:none;">
+      <span class="count-badge" id="locCount" style="display:none;"></span>
+    </div>
+    <div class="table-scroll" id="locTableScroll" style="display:none;">
+      <table id="locTable"><thead><tr id="locHead"></tr></thead><tbody id="locBody"></tbody></table>
+    </div>
+  </div>
+
+  <!-- ================= 바코드 스캔 ================= -->
+  <div class="panel">
+    <div class="sub-section-title">📷 바코드 스캔</div>
+    <div class="foot-note" style="margin-bottom:8px;">휴대폰 카메라로 제품 바코드(표준코드)를 비추면 자동으로 인식해서, 로케이션DB에 저장된 재고위치를 바로 보여줘요 · 카메라가 안 잡히거나 바코드가 손상됐으면 아래 칸에 코드를 직접 입력하셔도 돼요 · 이 브라우저에서 카메라 권한을 처음 물어보면 허용을 눌러주세요.</div>
+    <div class="foot-note" style="margin-bottom:12px; color:#c1791b;">⚠️ "카메라로 스캔 시작"을 눌렀는데 아무 반응이 없거나 화면이 까매요? 예전에 카메라 권한을 실수로 거부하셨으면, 브라우저가 다시 안 물어보고 조용히 막을 수 있어요 — 주소창 왼쪽 자물쇠(또는 "aA") 아이콘 → 사이트 설정 → 카메라를 "허용"으로 바꾸신 다음 새로고침해주세요.</div>
+
+    <div class="row" style="margin-bottom:12px;">
+      <button class="btn primary" id="barcodeStartBtn">📷 카메라로 스캔 시작</button>
+      <button class="btn" id="barcodeStopBtn" style="display:none;">■ 스캔 중지</button>
+    </div>
+
+    <div id="barcodeVideoWrap" style="display:none; max-width:480px; margin-bottom:14px;">
+      <div style="position:relative;">
+        <video id="barcodeVideo" style="width:100%; display:block; background:#000; border:1px solid var(--line-strong);" playsinline autoplay muted></video>
+      </div>
+      <div class="foot-note" style="margin-top:6px;">바코드를 화면 가운데에 밝은 곳에서 비춰주세요.</div>
+      <div id="barcodeZoomWrap" style="display:none; align-items:center; gap:8px; margin-top:8px;">
+        <span class="foot-note">확대</span>
+        <input type="range" id="barcodeZoomSlider" style="flex:1;">
+      </div>
+    </div>
+
+    <div id="barcodeDetectedWrap" style="display:none; max-width:480px; margin-bottom:14px; background:var(--panel-2); border:2px solid var(--teal-ink); border-radius:12px; padding:12px 14px;">
+      <div class="foot-note" style="margin-bottom:4px;">이 코드가 맞나요?</div>
+      <div id="barcodeDetectedValue" style="font-size:15px; font-weight:700; font-family:var(--mono); word-break:break-all; margin-bottom:10px;"></div>
+      <div class="row">
+        <button class="btn primary" id="barcodeConfirmBtn" style="flex:1;">✅ 이 코드로 조회하기</button>
+        <button class="btn" id="barcodeDismissBtn">다시 스캔</button>
+      </div>
+    </div>
+
+    <div class="row" style="margin-bottom:14px;">
+      <input type="text" id="barcodeManualInput" placeholder="또는 표준코드를 직접 입력/붙여넣기" style="flex:1;">
+      <button class="btn" id="barcodeManualBtn">조회</button>
+    </div>
+
+    <div id="barcodeResultWrap" style="display:none;">
+      <div id="barcodeResultCode" class="foot-note" style="margin-bottom:6px;"></div>
+      <div id="barcodeResultName" style="font-size:20px; font-weight:800; margin-bottom:12px;"></div>
+      <div class="row" style="align-items:flex-start; gap:20px;">
+        <div>
+          <div class="result-label">재고위치</div>
+          <div id="barcodeResultLoc" style="font-size:22px; font-weight:800; color:var(--teal-ink);"></div>
+        </div>
+        <div>
+          <div class="result-label">가용재고</div>
+          <div id="barcodeResultStock" style="font-size:18px; font-weight:700;"></div>
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <div class="result-label">보관방법</div>
+        <div id="barcodeResultStorage" style="font-size:15px;"></div>
+      </div>
+      <div style="margin-top:6px;">
+        <div class="result-label">분리보관장소</div>
+        <div id="barcodeResultSeparate" style="font-size:15px;"></div>
+      </div>
+    </div>
+    <div id="barcodeNotFound" style="display:none; color:var(--red); font-weight:700; padding:12px;"></div>
+    <div id="barcodeStatus" class="foot-note"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
+<script>
+/* =======================================================================
+   FIREBASE 저장소 연동 — 원본 대시보드(index.html)와 같은 Firebase 프로젝트를
+   그대로 씁니다(별도 콘솔 설정 필요 없음). 저장 키만 이 도구 전용으로 분리했어요.
+   ======================================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBwiXvIitbLNQYbfnoKS_bJ6aGQTYTO4As",
+  authDomain: "ccccgc-57a14.firebaseapp.com",
+  projectId: "ccccgc-57a14",
+  storageBucket: "ccccgc-57a14.firebasestorage.app",
+  messagingSenderId: "865064688661",
+  appId: "1:865064688661:web:ec888a861172074716821c"
+};
+const FIREBASE_COLLECTION = 'stockout_dashboard';
+const APP_CHECK_SITE_KEY = '6LcO73stAAAAAI9oYoHC3lu8E_yu5rg9oHkpfZWq';
+const LOC_STORAGE_KEY = 'barcode_location_db_v1';
+
+let _fbDB = null;
+let _appCheckReadyPromise = null;
+function getFirestore(){
+  if(_fbDB) return _fbDB;
+  if(typeof firebase === 'undefined') throw new Error('Firebase SDK가 로드되지 않았어요');
+  if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  if(APP_CHECK_SITE_KEY && typeof firebase.appCheck === 'function'){
+    try{
+      firebase.appCheck().activate(APP_CHECK_SITE_KEY, true);
+      _appCheckReadyPromise = firebase.appCheck().getToken().catch(()=>{});
+    }catch(e){ console.warn('App Check 활성화 실패:', e); }
+  }
+  _fbDB = firebase.firestore();
+  return _fbDB;
+}
+async function ensureAppCheckReady(){ if(_appCheckReadyPromise) await _appCheckReadyPromise; }
+
+const firebaseStorageShim = {
+  async get(key, shared){
+    const db = getFirestore(); await ensureAppCheckReady();
+    const snap = await db.collection(FIREBASE_COLLECTION).doc(key).get();
+    if(!snap.exists) return null;
+    return { key, value: snap.data().value, shared: !!shared };
+  },
+  async set(key, value, shared){
+    const db = getFirestore(); await ensureAppCheckReady();
+    await db.collection(FIREBASE_COLLECTION).doc(key).set({ value, updatedAt: new Date().toISOString() });
+    return { key, value, shared: !!shared };
+  },
+  async delete(key, shared){
+    const db = getFirestore(); await ensureAppCheckReady();
+    await db.collection(FIREBASE_COLLECTION).doc(key).delete();
+    return { key, deleted:true, shared: !!shared };
+  }
+};
+// Claude.ai 아티팩트 안에서 열렸으면 window.storage가 이미 있으니 이 shim은 안 쓰여요.
+if(typeof window.storage === 'undefined') window.storage = firebaseStorageShim;
+
+// ---------- 조각 저장(청크) — 로케이션DB가 커져도 Firestore 1MB 문서 한도를 안 넘게 나눠 저장해요.
+// 새 조각을 새 버전 이름으로 먼저 다 쓰고, 마지막에 메타데이터 포인터만 바꾼 뒤 예전 조각을
+// 지우는 순서라서, 저장 도중 실패해도 예전 데이터가 손상되지 않아요.
+const MAX_VALUE_BYTES = 900 * 1024;
+function byteLengthOf(value){ return new TextEncoder().encode(JSON.stringify(value)).length; }
+function splitRowsIntoChunks(rows, maxBytes){
+  if(rows.length === 0) return [[]];
+  if(byteLengthOf(rows) <= maxBytes) return [rows];
+  const chunks = []; let current = []; let currentBytes = 2;
+  for(let i=0;i<rows.length;i++){
+    const rowBytes = byteLengthOf([rows[i]]) - 2;
+    const added = rowBytes + (current.length>0 ? 1 : 0);
+    if(current.length>0 && currentBytes+added>maxBytes){ chunks.push(current); current=[rows[i]]; currentBytes=2+rowBytes; }
+    else { current.push(rows[i]); currentBytes += added; }
+  }
+  if(current.length>0) chunks.push(current);
+  return chunks.length ? chunks : [[]];
+}
+async function storageSetWithRetry(key, value, shared, retries){
+  retries = retries===undefined?4:retries; let lastErr=null;
+  for(let a=0;a<=retries;a++){
+    try{ const r = await window.storage.set(key, value, shared); if(r) return r; lastErr=new Error('빈 응답'); }
+    catch(e){ lastErr=e; }
+    if(a<retries) await new Promise(r=>setTimeout(r, 500+a*600));
+  }
+  throw lastErr;
+}
+async function storageGetWithRetry(key, shared, retries){
+  retries = retries===undefined?3:retries; let lastErr=null;
+  for(let a=0;a<=retries;a++){
+    try{ return await window.storage.get(key, shared); }catch(e){ lastErr=e; }
+    if(a<retries) await new Promise(r=>setTimeout(r, 400+a*500));
+  }
+  throw lastErr;
+}
+
+// ---------- 로케이션DB 상태 ----------
+let locState = null; // { headers, rows, fileName, uploadedAt, savedAt, chunkCount, chunkVersion }
+
+function setLocSaveState(state, extra){
+  const dot = document.getElementById('locSaveDot');
+  const label = document.getElementById('locSaveLabel');
+  const wrap = document.getElementById('locSaveIndicator');
+  wrap.style.display = 'flex';
+  dot.className = 'save-dot';
+  if(state==='saving'){ dot.classList.add('saving'); label.textContent = extra || '저장 중...'; }
+  else if(state==='saved'){ dot.classList.add('saved'); label.textContent = '저장됨 · ' + new Date(locState.savedAt).toLocaleString('ko-KR'); }
+  else if(state==='error'){ dot.classList.add('error'); label.textContent = '저장 실패: ' + extra; }
+}
+
+async function saveLocationDB(){
+  if(!locState) return;
+  setLocSaveState('saving');
+  try{
+    const now = new Date().toISOString();
+    const chunks = splitRowsIntoChunks(locState.rows, MAX_VALUE_BYTES);
+    const isChunked = chunks.length > 1;
+    const prevVersion = locState.chunkVersion || null;
+    const prevChunkCount = locState.chunkCount || 0;
+    const newVersion = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+    if(isChunked){
+      for(let i=0;i<chunks.length;i++){
+        setLocSaveState('saving', `저장 중... (${i+1}/${chunks.length})`);
+        await storageSetWithRetry(LOC_STORAGE_KEY + '_v' + newVersion + '_chunk_' + i, JSON.stringify(chunks[i]), true);
+      }
+    }
+    const metaPayload = {
+      headers: locState.headers, fileName: locState.fileName, uploadedAt: locState.uploadedAt, savedAt: now,
+      chunked: isChunked, chunkCount: chunks.length, chunkVersion: isChunked ? newVersion : null
+    };
+    if(!isChunked) metaPayload.rows = chunks[0];
+    await storageSetWithRetry(LOC_STORAGE_KEY, JSON.stringify(metaPayload), true);
+
+    if(prevVersion){
+      for(let i=0;i<prevChunkCount;i++){ try{ await window.storage.delete(LOC_STORAGE_KEY + '_v' + prevVersion + '_chunk_' + i, true); }catch(e){} }
+    }
+    locState.savedAt = now;
+    locState.chunkCount = chunks.length;
+    locState.chunkVersion = isChunked ? newVersion : null;
+    setLocSaveState('saved');
+    updateLocMeta();
+  }catch(e){
+    setLocSaveState('error', (e && e.message) || String(e));
+  }
+}
+
+async function loadLocationDB(){
+  try{
+    const res = await window.storage.get(LOC_STORAGE_KEY, true);
+    if(!res || !res.value) return;
+    const parsed = JSON.parse(res.value);
+    let rows = parsed.rows || [];
+    if(parsed.chunked){
+      const prefix = LOC_STORAGE_KEY + '_v' + parsed.chunkVersion + '_chunk_';
+      const results = await Promise.all(
+        Array.from({length:parsed.chunkCount}, (_,i)=> storageGetWithRetry(prefix+i, true).catch(()=>null))
+      );
+      rows = [];
+      let missing = 0;
+      results.forEach(r=>{ if(r && r.value) rows = rows.concat(JSON.parse(r.value)); else missing++; });
+      if(missing>0) console.error(`로케이션DB: ${parsed.chunkCount}개 조각 중 ${missing}개를 못 불러왔어요.`);
+    }
+    locState = {
+      headers: parsed.headers, rows, fileName: parsed.fileName, uploadedAt: parsed.uploadedAt,
+      savedAt: parsed.savedAt, chunkCount: parsed.chunked ? parsed.chunkCount : 0, chunkVersion: parsed.chunked ? parsed.chunkVersion : null
+    };
+    updateLocMeta();
+    renderLocPreview();
+    setLocSaveState('saved');
+  }catch(e){ /* 아직 저장된 게 없거나 조회 실패 — 조용히 넘어가요 */ }
+}
+
+function updateLocMeta(){
+  const meta = document.getElementById('locMeta');
+  if(!locState){ meta.textContent = '아직 업로드된 데이터가 없어요'; return; }
+  const savedTxt = locState.savedAt ? ' · 저장됨 ' + new Date(locState.savedAt).toLocaleString('ko-KR') : '';
+  meta.textContent = `${locState.fileName || '(파일명 없음)'} · ${locState.rows.length.toLocaleString()}행${savedTxt}`;
+}
+
+// ---------- 파일 읽기 (EUC-KR/CP949 CSV 대응) ----------
+function looksMojibake(text){
+  const sample = text.slice(0, 2000);
+  if(!sample) return false;
+  const bad = (sample.match(/[\uFFFD\u00C0-\u00FF]/g) || []).length;
+  return bad > sample.length * 0.05;
+}
+function readWorkbookAoaFromBuffer(buf, filename){
+  const isCsv = /\.csv$/i.test(filename || '');
+  if(isCsv){
+    let text = new TextDecoder('utf-8').decode(buf);
+    if(looksMojibake(text)){
+      try{ text = new TextDecoder('euc-kr').decode(buf); }catch(e){}
+    }
+    const wb = XLSX.read(text, { type:'string' });
+    return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:true, defval:'' });
+  }
+  const wb = XLSX.read(buf, { type:'array' });
+  return XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header:1, raw:true, defval:'' });
+}
+
+async function handleLocFileSelect(file){
+  const buf = await file.arrayBuffer();
+  const aoa = readWorkbookAoaFromBuffer(buf, file.name);
+  if(aoa.length < 2){ alert('데이터가 비어있는 것 같아요. 헤더 행 + 데이터 행이 있어야 해요.'); return; }
+  const headers = aoa[0].map(h => String(h || '').trim());
+  const rows = aoa.slice(1).filter(r => r.some(v => String(v||'').trim() !== ''));
+  const hasCode = ['표준코드','바코드','바코드1'].some(n => headers.includes(n));
+  if(!hasCode){ alert('표준코드(또는 바코드) 열을 찾지 못했어요. 첫 행이 헤더인지 확인해주세요.'); return; }
+  locState = { headers, rows, fileName: file.name, uploadedAt: new Date().toISOString(), savedAt: null, chunkCount:0, chunkVersion:null };
+  document.getElementById('locSaveBtn').style.display = 'inline-flex';
+  document.getElementById('locClearBtn').style.display = 'inline-flex';
+  updateLocMeta();
+  renderLocPreview();
+}
+
+function renderLocPreview(){
+  if(!locState) return;
+  const { headers, rows } = locState;
+  document.getElementById('locSearch').style.display = 'inline-block';
+  document.getElementById('locCount').style.display = 'inline-block';
+  document.getElementById('locTableScroll').style.display = 'block';
+  document.getElementById('locCount').textContent = rows.length.toLocaleString() + '행';
+  const headEl = document.getElementById('locHead');
+  headEl.innerHTML = headers.map(h => `<th>${h}</th>`).join('');
+  const q = (document.getElementById('locSearch').value || '').trim().toLowerCase();
+  const filtered = q ? rows.filter(r => r.some(v => String(v||'').toLowerCase().includes(q))) : rows;
+  const bodyEl = document.getElementById('locBody');
+  bodyEl.innerHTML = filtered.slice(0, 100).map(r => '<tr>' + headers.map((h,i) => `<td>${r[i]===undefined?'':r[i]}</td>`).join('') + '</tr>').join('');
+  if(filtered.length > 100){
+    bodyEl.innerHTML += `<tr><td colspan="${headers.length}" class="foot-note">... 외 ${(filtered.length-100).toLocaleString()}행 (검색으로 좁혀보세요)</td></tr>`;
+  }
+}
+
+function clearLocationDB(){
+  if(!confirm('로케이션DB를 지울까요? 모든 사람·기기에서 지워지고 되돌릴 수 없어요.')) return;
+  (async ()=>{
+    try{
+      if(locState && locState.chunkVersion){
+        for(let i=0;i<locState.chunkCount;i++){ try{ await window.storage.delete(LOC_STORAGE_KEY + '_v' + locState.chunkVersion + '_chunk_' + i, true); }catch(e){} }
+      }
+      await window.storage.delete(LOC_STORAGE_KEY, true);
+    }catch(e){}
+    locState = null;
+    document.getElementById('locSaveBtn').style.display = 'none';
+    document.getElementById('locClearBtn').style.display = 'none';
+    document.getElementById('locSearch').style.display = 'none';
+    document.getElementById('locCount').style.display = 'none';
+    document.getElementById('locTableScroll').style.display = 'none';
+    document.getElementById('locSaveIndicator').style.display = 'none';
+    updateLocMeta();
+  })();
+}
+
+// ================= 바코드 조회 로직 =================
+// GS1 DataMatrix(의약품 UDI 2D코드)는 "(01)08800570018717"처럼 GTIN(AI 01)을 담고 있는데,
+// 다른 정보가 GTIN보다 앞에 나올 수 있어서, "01" 바로 뒤에 14자리 숫자가 오는 자리를 어디든
+// 찾아요. 14자리 앞자리가 0이면 떼어내 13자리 표준코드로 바꿔요.
+function extractGs1Gtin13(rawCode){
+  const text = String(rawCode || '');
+  const matches = [...text.matchAll(/(?=01(\d{14}))/g)];
+  if(matches.length === 0) return null;
+  const gtin14 = matches[matches.length - 1][1];
+  return gtin14.startsWith('0') ? gtin14.slice(1) : gtin14;
+}
+
+function lookupLocationByCode(rawCode){
+  if(!locState) return { found:false, reason:'로케이션DB가 아직 업로드되지 않았어요.' };
+  const code = String(rawCode || '').trim();
+  if(!code) return { found:false, reason:'코드가 비어있어요.' };
+  const codeDigitsOnly = code.replace(/\D/g, '');
+  const gs1Code = extractGs1Gtin13(code);
+  const { headers, rows } = locState;
+  const barcodeCols = ['표준코드','바코드','바코드1','바코드2','바코드3','바코드4','바코드5']
+    .map(name => headers.indexOf(name)).filter(i => i !== -1);
+  const idxName = headers.indexOf('상품명');
+  const idxLoc = headers.indexOf('재고위치');
+  const idxStorage = headers.indexOf('보관방법');
+  const idxSeparate = headers.indexOf('분리보관장소');
+  const idxStock = headers.indexOf('가용재고');
+
+  let row = rows.find(r => barcodeCols.some(ci => String(r[ci]||'').trim() === code));
+  if(!row && codeDigitsOnly){
+    row = rows.find(r => barcodeCols.some(ci => String(r[ci]||'').replace(/\D/g,'') === codeDigitsOnly));
+  }
+  if(!row && gs1Code){
+    row = rows.find(r => barcodeCols.some(ci => String(r[ci]||'').replace(/\D/g,'') === gs1Code));
+  }
+  if(!row) return { found:false, reason:`이 코드(${code})와 일치하는 상품을 로케이션DB에서 못 찾았어요.` };
+  return {
+    found: true, code,
+    name: idxName!==-1 ? row[idxName] : '',
+    location: idxLoc!==-1 ? (row[idxLoc] || '(등록된 위치 없음)') : '(재고위치 열 없음)',
+    storage: idxStorage!==-1 ? (row[idxStorage] || '-') : '-',
+    separate: idxSeparate!==-1 ? (row[idxSeparate] || '-') : '-',
+    stock: idxStock!==-1 ? (row[idxStock] || '0') : '-'
+  };
+}
+
+function showBarcodeResult(info){
+  const resWrap = document.getElementById('barcodeResultWrap');
+  const notFound = document.getElementById('barcodeNotFound');
+  if(!info.found){
+    resWrap.style.display = 'none';
+    notFound.style.display = 'block';
+    notFound.textContent = '❌ ' + info.reason;
+    return;
+  }
+  notFound.style.display = 'none';
+  resWrap.style.display = 'block';
+  document.getElementById('barcodeResultCode').textContent = `표준코드 ${info.code}`;
+  document.getElementById('barcodeResultName').textContent = info.name || '(상품명 없음)';
+  document.getElementById('barcodeResultLoc').textContent = info.location;
+  document.getElementById('barcodeResultStock').textContent = info.stock;
+  document.getElementById('barcodeResultStorage').textContent = info.storage;
+  document.getElementById('barcodeResultSeparate').textContent = info.separate;
+}
+
+// ================= 카메라 스캔 =================
+let _barcodeReader = null;
+let _barcodeScanning = false;
+let _barcodeAwaitingConfirm = false;
+let _barcodeLastDetected = null;
+
+async function startBarcodeScan(){
+  const statusEl = document.getElementById('barcodeStatus');
+  if(typeof ZXing === 'undefined'){
+    statusEl.textContent = '⚠️ 바코드 인식 라이브러리를 못 불러왔어요. 네트워크 상태를 확인하시거나, 아래 직접 입력을 이용해주세요.';
+    return;
+  }
+  if(!window.isSecureContext){
+    statusEl.textContent = '⚠️ 카메라는 https 주소에서만 쓸 수 있어요. 아래 직접 입력을 이용해주세요.';
+    return;
+  }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    statusEl.textContent = '⚠️ 이 브라우저에서는 카메라를 쓸 수 없어요. 아래 직접 입력을 이용해주세요.';
+    return;
+  }
+  document.getElementById('barcodeVideoWrap').style.display = 'block';
+  document.getElementById('barcodeStartBtn').style.display = 'none';
+  document.getElementById('barcodeStopBtn').style.display = 'inline-flex';
+  statusEl.textContent = '카메라를 켜는 중이에요... (처음이면 카메라 권한 허용 팝업이 떠요)';
+  _barcodeScanning = true;
+
+  const hints = new Map();
+  hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+    ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.CODE_128,
+    ZXing.BarcodeFormat.CODE_93, ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E,
+    ZXing.BarcodeFormat.UPC_EAN_EXTENSION, ZXing.BarcodeFormat.CODE_39, ZXing.BarcodeFormat.ITF,
+    ZXing.BarcodeFormat.CODABAR, ZXing.BarcodeFormat.RSS_14, ZXing.BarcodeFormat.RSS_EXPANDED,
+    ZXing.BarcodeFormat.QR_CODE, ZXing.BarcodeFormat.DATA_MATRIX,
+    ZXing.BarcodeFormat.AZTEC, ZXing.BarcodeFormat.PDF_417, ZXing.BarcodeFormat.MAXICODE
+  ]);
+  hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+  hints.set(ZXing.DecodeHintType.ALSO_INVERTED, true);
+  _barcodeReader = new ZXing.BrowserMultiFormatReader(hints);
+  const videoEl = document.getElementById('barcodeVideo');
+
+  const onDecode = (result)=>{
+    if(!result || !_barcodeScanning || _barcodeAwaitingConfirm) return;
+    _barcodeAwaitingConfirm = true;
+    _barcodeLastDetected = result.getText();
+    document.getElementById('barcodeDetectedValue').textContent = _barcodeLastDetected;
+    document.getElementById('barcodeDetectedWrap').style.display = 'block';
+    statusEl.textContent = '코드가 인식됐어요 — 아래에서 확인해주세요.';
+  };
+  const withTimeout = (promise, ms)=> Promise.race([
+    promise,
+    new Promise((_, reject)=> setTimeout(()=>{ const e = new Error('카메라 권한 응답이 없어요(팝업이 안 뜨거나 무시된 것 같아요)'); e.name='TimeoutError'; reject(e); }, ms))
+  ]);
+  const applyDefaultZoom = async (videoEl)=>{
+    try{
+      const stream = videoEl.srcObject;
+      const track = stream && stream.getVideoTracks()[0];
+      if(!track || typeof track.getCapabilities !== 'function') return;
+      const caps = track.getCapabilities();
+      if(!caps.zoom) return;
+      const target = Math.min(caps.zoom.max, caps.zoom.min + (caps.zoom.max - caps.zoom.min) * 0.35);
+      await track.applyConstraints({ advanced: [{ zoom: target }] });
+      const slider = document.getElementById('barcodeZoomSlider');
+      slider.min = caps.zoom.min; slider.max = caps.zoom.max; slider.step = caps.zoom.step || 0.1; slider.value = target;
+      document.getElementById('barcodeZoomWrap').style.display = 'flex';
+      slider.oninput = async ()=>{ try{ await track.applyConstraints({ advanced: [{ zoom: Number(slider.value) }] }); }catch(e){} };
+    }catch(e){}
+  };
+
+  try{
+    await withTimeout(_barcodeReader.decodeFromConstraints(
+      { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } },
+      videoEl, onDecode
+    ), 10000);
+    await applyDefaultZoom(videoEl);
+    statusEl.textContent = '바코드를 화면 가운데에 비춰주세요.';
+  }catch(e1){
+    try{
+      await withTimeout(_barcodeReader.decodeFromConstraints({ video: true }, videoEl, onDecode), 10000);
+      await applyDefaultZoom(videoEl);
+      statusEl.textContent = '바코드를 화면 가운데에 비춰주세요. (일부 기기에서는 전면 카메라가 켜질 수 있어요)';
+    }catch(e2){
+      const errName = (e2 && e2.name) || (e1 && e1.name) || '알 수 없음';
+      const errMsg = (e2 && e2.message) || (e1 && e1.message) || String(e2 || e1);
+      const extra = errName === 'TimeoutError' ? ' — 이전에 카메라 권한을 거부하신 적 있으면, 사이트 설정에서 카메라를 다시 "허용"으로 바꿔주세요.' : '';
+      statusEl.textContent = `⚠️ 카메라를 시작할 수 없어요 (${errName}): ${errMsg}${extra} — 아래 직접 입력을 이용해주세요.`;
+      stopBarcodeScan();
+    }
+  }
+}
+
+function stopBarcodeScan(){
+  _barcodeScanning = false;
+  _barcodeAwaitingConfirm = false;
+  document.getElementById('barcodeDetectedWrap').style.display = 'none';
+  document.getElementById('barcodeZoomWrap').style.display = 'none';
+  if(_barcodeReader){ try{ _barcodeReader.reset(); }catch(e){} _barcodeReader = null; }
+  document.getElementById('barcodeVideoWrap').style.display = 'none';
+  document.getElementById('barcodeStartBtn').style.display = 'inline-flex';
+  document.getElementById('barcodeStopBtn').style.display = 'none';
+}
+
+function init(){
+  document.getElementById('barcodeStartBtn').addEventListener('click', startBarcodeScan);
+  document.getElementById('barcodeStopBtn').addEventListener('click', stopBarcodeScan);
+  document.getElementById('barcodeManualBtn').addEventListener('click', ()=>{
+    showBarcodeResult(lookupLocationByCode(document.getElementById('barcodeManualInput').value));
+  });
+  document.getElementById('barcodeManualInput').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('barcodeManualBtn').click(); }
+  });
+  document.getElementById('barcodeConfirmBtn').addEventListener('click', ()=>{
+    if(!_barcodeLastDetected) return;
+    showBarcodeResult(lookupLocationByCode(_barcodeLastDetected));
+    document.getElementById('barcodeStatus').textContent = `✅ 조회 완료: ${_barcodeLastDetected} (계속 다른 상품을 비추면 다시 인식돼요)`;
+    document.getElementById('barcodeDetectedWrap').style.display = 'none';
+    _barcodeAwaitingConfirm = false;
+  });
+  document.getElementById('barcodeDismissBtn').addEventListener('click', ()=>{
+    document.getElementById('barcodeDetectedWrap').style.display = 'none';
+    document.getElementById('barcodeStatus').textContent = '다시 스캔해주세요.';
+    _barcodeAwaitingConfirm = false;
+  });
+
+  document.getElementById('locFile').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(file) handleLocFileSelect(file);
+    e.target.value = '';
+  });
+  document.getElementById('locSaveBtn').addEventListener('click', saveLocationDB);
+  document.getElementById('locClearBtn').addEventListener('click', clearLocationDB);
+  document.getElementById('locSearch').addEventListener('input', renderLocPreview);
+
+  loadLocationDB();
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

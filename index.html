@@ -96,7 +96,7 @@
 
     <div id="barcodeVideoWrap" style="display:none; max-width:320px; margin-bottom:14px;">
       <div style="position:relative;">
-        <video id="barcodeVideo" style="width:100%; display:block; background:#000; border:1px solid var(--line-strong);" playsinline autoplay muted></video>
+        <video id="barcodeVideo" style="width:100%; height:180px; object-fit:cover; display:block; background:#000; border:1px solid var(--line-strong);" playsinline autoplay muted></video>
       </div>
       <div class="foot-note" style="margin-top:6px;">바코드를 화면 가운데에 밝은 곳에서 비춰주세요.</div>
       <div id="barcodeZoomWrap" style="display:none; align-items:center; gap:8px; margin-top:8px;">
@@ -121,24 +121,11 @@
 
     <div id="barcodeResultWrap" style="display:none;">
       <div id="barcodeResultCode" class="foot-note" style="margin-bottom:6px;"></div>
-      <div id="barcodeResultName" style="font-size:20px; font-weight:800; margin-bottom:12px;"></div>
-      <div class="row" style="align-items:flex-start; gap:20px;">
-        <div>
-          <div class="result-label">재고위치</div>
-          <div id="barcodeResultLoc" style="font-size:22px; font-weight:800; color:var(--teal-ink);"></div>
-        </div>
-        <div>
-          <div class="result-label">가용재고</div>
-          <div id="barcodeResultStock" style="font-size:18px; font-weight:700;"></div>
-        </div>
-      </div>
-      <div style="margin-top:10px;">
-        <div class="result-label">보관방법</div>
-        <div id="barcodeResultStorage" style="font-size:15px;"></div>
-      </div>
-      <div style="margin-top:6px;">
-        <div class="result-label">분리보관장소</div>
-        <div id="barcodeResultSeparate" style="font-size:15px;"></div>
+      <div id="barcodeResultName" style="font-size:19px; font-weight:800; margin-bottom:2px;"></div>
+      <div id="barcodeResultSpec" style="font-size:13px; color:var(--ink-dim); margin-bottom:10px;"></div>
+      <div>
+        <div class="result-label">재고위치</div>
+        <div id="barcodeResultLoc" style="font-size:24px; font-weight:800; color:var(--teal-ink);"></div>
       </div>
     </div>
     <div id="barcodeNotFound" style="display:none; color:var(--red); font-weight:700; padding:12px;"></div>
@@ -281,10 +268,8 @@ function lookupLocationByCode(rawCode){
   const barcodeCols = ['표준코드','바코드','바코드1','바코드2','바코드3','바코드4','바코드5']
     .map(name => headers.indexOf(name)).filter(i => i !== -1);
   const idxName = headers.indexOf('상품명');
+  const idxSpec = headers.indexOf('규격');
   const idxLoc = headers.indexOf('재고위치');
-  const idxStorage = headers.indexOf('보관방법');
-  const idxSeparate = headers.indexOf('분리보관장소');
-  const idxStock = headers.indexOf('가용재고');
 
   let row = rows.find(r => barcodeCols.some(ci => String(r[ci]||'').trim() === code));
   if(!row && codeDigitsOnly){
@@ -297,10 +282,8 @@ function lookupLocationByCode(rawCode){
   return {
     found: true, code,
     name: idxName!==-1 ? row[idxName] : '',
-    location: idxLoc!==-1 ? (row[idxLoc] || '(등록된 위치 없음)') : '(재고위치 열 없음)',
-    storage: idxStorage!==-1 ? (row[idxStorage] || '-') : '-',
-    separate: idxSeparate!==-1 ? (row[idxSeparate] || '-') : '-',
-    stock: idxStock!==-1 ? (row[idxStock] || '0') : '-'
+    spec: idxSpec!==-1 ? row[idxSpec] : '',
+    location: idxLoc!==-1 ? (row[idxLoc] || '(등록된 위치 없음)') : '(재고위치 열 없음)'
   };
 }
 
@@ -317,10 +300,8 @@ function showBarcodeResult(info){
   resWrap.style.display = 'block';
   document.getElementById('barcodeResultCode').textContent = `표준코드 ${info.code}`;
   document.getElementById('barcodeResultName').textContent = info.name || '(상품명 없음)';
+  document.getElementById('barcodeResultSpec').textContent = info.spec || '';
   document.getElementById('barcodeResultLoc').textContent = info.location;
-  document.getElementById('barcodeResultStock').textContent = info.stock;
-  document.getElementById('barcodeResultStorage').textContent = info.storage;
-  document.getElementById('barcodeResultSeparate').textContent = info.separate;
 }
 
 // ================= 카메라 스캔 =================

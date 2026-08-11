@@ -33,11 +33,6 @@
   .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
   .upload-drop{display:flex; align-items:center; gap:8px; border:1px dashed var(--line-strong); border-radius:9px; padding:10px 12px; cursor:pointer; font-size:13.5px; color:var(--ink-dim); background:var(--panel-2);}
   input[type="text"]{background:var(--panel); border:1px solid var(--line-strong); color:var(--ink); border-radius:8px; padding:9px 12px; font-size:14px;}
-  .save-indicator{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-faint);}
-  .save-dot{width:7px; height:7px; border-radius:50%; background:var(--ink-faint);}
-  .save-dot.saved{background:#2fa876;}
-  .save-dot.saving{background:#c1791b;}
-  .save-dot.error{background:var(--red);}
   table{width:100%; border-collapse:collapse; font-size:12.5px;}
   th,td{border-bottom:1px solid var(--line); padding:6px 8px; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;}
   th{color:var(--ink-faint); font-weight:700; position:sticky; top:0; background:var(--panel);}
@@ -61,21 +56,20 @@
   <div class="panel" id="locPanel" style="display:none;">
     <div class="sub-section-title">📦 로케이션DB</div>
     <details style="margin-bottom:10px;">
-      <summary style="cursor:pointer; font-size:12.5px; color:var(--ink-faint);">ℹ️ 업로드 안내 보기</summary>
+      <summary style="cursor:pointer; font-size:12.5px; color:var(--ink-faint);">ℹ️ 사용법 보기</summary>
       <div class="foot-note" style="margin-top:6px;">
         엑셀/CSV로 올려주세요 · 필수 열: <b>표준코드</b>(또는 바코드) · 선택 열: 바코드1~바코드5, 상품명, 재고위치, 분리보관장소, 보관방법, 가용재고 ·
-        같은 표준코드로 다시 올리면 예전 내용을 덮어써요 · <b>업로드 후 "저장" 버튼까지 눌러야</b> 이 링크를 쓰는 모든 사람·기기에 공유돼요.
+        올리면 미리보기가 떠요 → <b>"JSON 다운로드"</b>를 누르면 <code>location_db.json</code> 파일이 저장돼요 → 그 파일을 이 페이지가 있는 GitHub 저장소 폴더에 그대로 올리면(같은 이름으로 덮어쓰기) 몇 분 안에 모든 사람·기기에 반영돼요.
       </div>
     </details>
     <div class="row">
       <label class="upload-drop" for="locFile">📁 파일 선택 (.xlsx / .xls / .csv)</label>
       <input type="file" id="locFile" accept=".xlsx,.xls,.csv" hidden>
-      <button class="btn primary" id="locSaveBtn" disabled>💾 저장</button>
-      <button class="btn danger" id="locClearBtn" disabled>데이터 지우기</button>
+      <button class="btn primary" id="locDownloadBtn" disabled>⬇️ JSON 다운로드</button>
+      <button class="btn danger" id="locClearBtn" disabled>미리보기 지우기</button>
     </div>
     <div class="row" style="margin-top:10px;">
-      <div class="foot-note" id="locMeta">아직 업로드된 데이터가 없어요</div>
-      <div class="save-indicator" id="locSaveIndicator" style="display:none;"><span class="save-dot" id="locSaveDot"></span><span id="locSaveLabel">대기 중</span></div>
+      <div class="foot-note" id="locMeta">아직 불러온 로케이션DB가 없어요</div>
     </div>
     <div class="row" style="margin-top:12px;">
       <input type="text" id="locSearch" placeholder="미리보기 검색..." style="flex:1; display:none;">
@@ -154,195 +148,50 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 <script>
 /* =======================================================================
-   FIREBASE 저장소 연동 — 원본 대시보드(index.html)와 같은 Firebase 프로젝트를
-   그대로 씁니다(별도 콘솔 설정 필요 없음). 저장 키만 이 도구 전용으로 분리했어요.
+   로케이션DB 저장소 — Firebase 없이, 같은 저장소에 있는 location_db.json 파일을
+   그냥 읽어와요. 모든 사람이 같은 파일을 보니까 그게 곧 "공유"예요.
+   업데이트는: 관리 탭에서 엑셀 올리고 → JSON 다운로드 → 그 파일을 GitHub
+   저장소의 이 index.html과 같은 폴더에 location_db.json으로 올리면 끝.
    ======================================================================= */
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBwiXvIitbLNQYbfnoKS_bJ6aGQTYTO4As",
-  authDomain: "ccccgc-57a14.firebaseapp.com",
-  projectId: "ccccgc-57a14",
-  storageBucket: "ccccgc-57a14.firebasestorage.app",
-  messagingSenderId: "865064688661",
-  appId: "1:865064688661:web:ec888a861172074716821c"
-};
-const FIREBASE_COLLECTION = 'stockout_dashboard';
-const APP_CHECK_SITE_KEY = '6LcO73stAAAAAI9oYoHC3lu8E_yu5rg9oHkpfZWq';
-const LOC_STORAGE_KEY = 'barcode_location_db_v1';
-
-let _fbDB = null;
-let _appCheckReadyPromise = null;
-function getFirestore(){
-  if(_fbDB) return _fbDB;
-  if(typeof firebase === 'undefined') throw new Error('Firebase SDK가 로드되지 않았어요');
-  if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-  if(APP_CHECK_SITE_KEY && typeof firebase.appCheck === 'function'){
-    try{
-      firebase.appCheck().activate(APP_CHECK_SITE_KEY, true);
-      _appCheckReadyPromise = firebase.appCheck().getToken().catch(()=>{});
-    }catch(e){ console.warn('App Check 활성화 실패:', e); }
-  }
-  _fbDB = firebase.firestore();
-  return _fbDB;
-}
-async function ensureAppCheckReady(){ if(_appCheckReadyPromise) await _appCheckReadyPromise; }
-
-const firebaseStorageShim = {
-  async get(key, shared){
-    const db = getFirestore(); await ensureAppCheckReady();
-    const snap = await db.collection(FIREBASE_COLLECTION).doc(key).get();
-    if(!snap.exists) return null;
-    return { key, value: snap.data().value, shared: !!shared };
-  },
-  async set(key, value, shared){
-    const db = getFirestore(); await ensureAppCheckReady();
-    await db.collection(FIREBASE_COLLECTION).doc(key).set({ value, updatedAt: new Date().toISOString() });
-    return { key, value, shared: !!shared };
-  },
-  async delete(key, shared){
-    const db = getFirestore(); await ensureAppCheckReady();
-    await db.collection(FIREBASE_COLLECTION).doc(key).delete();
-    return { key, deleted:true, shared: !!shared };
-  }
-};
-// Claude.ai 아티팩트 안에서 열렸으면 window.storage가 이미 있으니 이 shim은 안 쓰여요.
-if(typeof window.storage === 'undefined') window.storage = firebaseStorageShim;
-
-// ---------- 조각 저장(청크) — 로케이션DB가 커져도 Firestore 1MB 문서 한도를 안 넘게 나눠 저장해요.
-// 새 조각을 새 버전 이름으로 먼저 다 쓰고, 마지막에 메타데이터 포인터만 바꾼 뒤 예전 조각을
-// 지우는 순서라서, 저장 도중 실패해도 예전 데이터가 손상되지 않아요.
-const MAX_VALUE_BYTES = 900 * 1024;
-function byteLengthOf(value){ return new TextEncoder().encode(JSON.stringify(value)).length; }
-function splitRowsIntoChunks(rows, maxBytes){
-  if(rows.length === 0) return [[]];
-  const totalBytes = byteLengthOf(rows);
-  if(totalBytes <= maxBytes) return [rows];
-  // 행 하나하나 크기를 재지 않고, 평균 행 크기로 한 번에 나눠요(수만 행이어도 즉시 계산돼요).
-  // 안전하게 목표치의 80%만 채워서, 유난히 긴 행이 몇 개 섞여도 1MB 한도를 넘지 않게 여유를 둡니다.
-  const avgBytes = totalBytes / rows.length;
-  const rowsPerChunk = Math.max(1, Math.floor((maxBytes * 0.8) / avgBytes));
-  const chunks = [];
-  for(let i=0;i<rows.length;i+=rowsPerChunk){
-    chunks.push(rows.slice(i, i+rowsPerChunk));
-  }
-  return chunks;
-}
-function isNonRetryableError(e){
-  const code = e && (e.code || '');
-  return code === 'permission-denied' || code === 'unauthenticated' || code === 'invalid-argument';
-}
-async function storageSetWithRetry(key, value, shared, retries){
-  retries = retries===undefined?4:retries; let lastErr=null;
-  for(let a=0;a<=retries;a++){
-    try{ const r = await window.storage.set(key, value, shared); if(r) return r; lastErr=new Error('빈 응답'); }
-    catch(e){ lastErr=e; if(isNonRetryableError(e)) break; }
-    if(a<retries) await new Promise(r=>setTimeout(r, 500+a*600));
-  }
-  throw lastErr;
-}
-async function storageGetWithRetry(key, shared, retries){
-  retries = retries===undefined?3:retries; let lastErr=null;
-  for(let a=0;a<=retries;a++){
-    try{ return await window.storage.get(key, shared); }catch(e){ lastErr=e; }
-    if(a<retries) await new Promise(r=>setTimeout(r, 400+a*500));
-  }
-  throw lastErr;
-}
+const LOC_JSON_PATH = './location_db.json';
 
 // ---------- 로케이션DB 상태 ----------
-let locState = null; // { headers, rows, fileName, uploadedAt, savedAt, chunkCount, chunkVersion }
-
-function setLocSaveState(state, extra){
-  const dot = document.getElementById('locSaveDot');
-  const label = document.getElementById('locSaveLabel');
-  const wrap = document.getElementById('locSaveIndicator');
-  wrap.style.display = 'flex';
-  dot.className = 'save-dot';
-  if(state==='saving'){ dot.classList.add('saving'); label.textContent = extra || '저장 중...'; }
-  else if(state==='saved'){ dot.classList.add('saved'); label.textContent = '저장됨 · ' + new Date(locState.savedAt).toLocaleString('ko-KR'); }
-  else if(state==='error'){ dot.classList.add('error'); label.textContent = '저장 실패: ' + extra; }
-}
-
-async function saveLocationDB(){
-  if(!locState) return;
-  setLocSaveState('saving');
-  await new Promise(r => setTimeout(r, 0)); // "저장 중" 표시가 실제로 화면에 그려질 시간을 줘요
-  try{
-    const now = new Date().toISOString();
-    const chunks = splitRowsIntoChunks(locState.rows, MAX_VALUE_BYTES);
-    const isChunked = chunks.length > 1;
-    const prevVersion = locState.chunkVersion || null;
-    const prevChunkCount = locState.chunkCount || 0;
-    const newVersion = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-
-    if(isChunked){
-      for(let i=0;i<chunks.length;i++){
-        setLocSaveState('saving', `저장 중... (${i+1}/${chunks.length})`);
-        await storageSetWithRetry(LOC_STORAGE_KEY + '_v' + newVersion + '_chunk_' + i, JSON.stringify(chunks[i]), true);
-      }
-    }
-    const metaPayload = {
-      headers: locState.headers, fileName: locState.fileName, uploadedAt: locState.uploadedAt, savedAt: now,
-      chunked: isChunked, chunkCount: chunks.length, chunkVersion: isChunked ? newVersion : null
-    };
-    if(!isChunked) metaPayload.rows = chunks[0];
-    await storageSetWithRetry(LOC_STORAGE_KEY, JSON.stringify(metaPayload), true);
-
-    if(prevVersion){
-      for(let i=0;i<prevChunkCount;i++){ try{ await window.storage.delete(LOC_STORAGE_KEY + '_v' + prevVersion + '_chunk_' + i, true); }catch(e){} }
-    }
-    locState.savedAt = now;
-    locState.chunkCount = chunks.length;
-    locState.chunkVersion = isChunked ? newVersion : null;
-    setLocSaveState('saved');
-    updateLocMeta();
-  }catch(e){
-    const code = e && e.code;
-    let msg = (e && e.message) || String(e);
-    if(code === 'permission-denied'){
-      msg += ' — 이 도메인이 파이어베이스 App Check(reCAPTCHA) 허용 목록에 없을 수 있어요. 관리자에게 이 주소를 등록해달라고 요청해주세요.';
-    }
-    setLocSaveState('error', msg);
-  }
-}
+// source: 'published' = location_db.json에서 불러온, 지금 모두가 보는 데이터
+//         'staged'    = 관리 탭에서 방금 올렸지만 아직 GitHub에 안 올린 데이터(미리보기/다운로드용)
+let locState = null; // { headers, rows, fileName, loadedAt|uploadedAt, source }
 
 async function loadLocationDB(){
   try{
-    const res = await window.storage.get(LOC_STORAGE_KEY, true);
-    if(!res || !res.value) return;
-    const parsed = JSON.parse(res.value);
-    let rows = parsed.rows || [];
-    if(parsed.chunked){
-      const prefix = LOC_STORAGE_KEY + '_v' + parsed.chunkVersion + '_chunk_';
-      const results = await Promise.all(
-        Array.from({length:parsed.chunkCount}, (_,i)=> storageGetWithRetry(prefix+i, true).catch(()=>null))
-      );
-      rows = [];
-      let missing = 0;
-      results.forEach(r=>{ if(r && r.value) rows = rows.concat(JSON.parse(r.value)); else missing++; });
-      if(missing>0) console.error(`로케이션DB: ${parsed.chunkCount}개 조각 중 ${missing}개를 못 불러왔어요.`);
-    }
-    locState = {
-      headers: parsed.headers, rows, fileName: parsed.fileName, uploadedAt: parsed.uploadedAt,
-      savedAt: parsed.savedAt, chunkCount: parsed.chunked ? parsed.chunkCount : 0, chunkVersion: parsed.chunked ? parsed.chunkVersion : null
-    };
+    const res = await fetch(LOC_JSON_PATH + '?t=' + Date.now(), { cache:'no-store' });
+    if(!res.ok) return; // 아직 파일이 없으면 조용히 넘어가요
+    const parsed = await res.json();
+    locState = { headers: parsed.headers, rows: parsed.rows, fileName: 'location_db.json', loadedAt: new Date().toISOString(), source:'published' };
     updateLocMeta();
     renderLocPreview();
-    setLocSaveState('saved');
-    document.getElementById('locSaveBtn').disabled = false;
-    document.getElementById('locClearBtn').disabled = false;
-  }catch(e){ /* 아직 저장된 게 없거나 조회 실패 — 조용히 넘어가요 */ }
+  }catch(e){ /* 네트워크 문제 등 — 조용히 넘어가고, 스캔 시 "로케이션DB 없음"으로 안내돼요 */ }
+}
+
+function downloadLocationDBJson(){
+  if(!locState) return;
+  const payload = { headers: locState.headers, rows: locState.rows, updatedAt: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(payload)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'location_db.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function updateLocMeta(){
   const meta = document.getElementById('locMeta');
-  if(!locState){ meta.textContent = '아직 업로드된 데이터가 없어요'; return; }
-  const savedTxt = locState.savedAt ? ' · 저장됨 ' + new Date(locState.savedAt).toLocaleString('ko-KR') : '';
-  meta.textContent = `${locState.fileName || '(파일명 없음)'} · ${locState.rows.length.toLocaleString()}행${savedTxt}`;
+  if(!locState){ meta.textContent = '아직 불러온 로케이션DB가 없어요'; return; }
+  if(locState.source === 'staged'){
+    meta.textContent = `${locState.fileName} · ${locState.rows.length.toLocaleString()}행 · ⚠️ 아직 GitHub에 안 올렸어요 — "JSON 다운로드" 후 location_db.json으로 저장소에 올려주세요`;
+  } else {
+    meta.textContent = `공유 중인 로케이션DB · ${locState.rows.length.toLocaleString()}행 · 불러온 시각 ${new Date(locState.loadedAt).toLocaleString('ko-KR')}`;
+  }
 }
 
 // ---------- 파일 읽기 (EUC-KR/CP949 CSV 대응) ----------
@@ -374,8 +223,8 @@ async function handleLocFileSelect(file){
   const rows = aoa.slice(1).filter(r => r.some(v => String(v||'').trim() !== ''));
   const hasCode = ['표준코드','바코드','바코드1'].some(n => headers.includes(n));
   if(!hasCode){ alert('표준코드(또는 바코드) 열을 찾지 못했어요. 첫 행이 헤더인지 확인해주세요.'); return; }
-  locState = { headers, rows, fileName: file.name, uploadedAt: new Date().toISOString(), savedAt: null, chunkCount:0, chunkVersion:null };
-  document.getElementById('locSaveBtn').disabled = false;
+  locState = { headers, rows, fileName: file.name, uploadedAt: new Date().toISOString(), source:'staged' };
+  document.getElementById('locDownloadBtn').disabled = false;
   document.getElementById('locClearBtn').disabled = false;
   updateLocMeta();
   renderLocPreview();
@@ -400,23 +249,14 @@ function renderLocPreview(){
 }
 
 function clearLocationDB(){
-  if(!confirm('로케이션DB를 지울까요? 모든 사람·기기에서 지워지고 되돌릴 수 없어요.')) return;
-  (async ()=>{
-    try{
-      if(locState && locState.chunkVersion){
-        for(let i=0;i<locState.chunkCount;i++){ try{ await window.storage.delete(LOC_STORAGE_KEY + '_v' + locState.chunkVersion + '_chunk_' + i, true); }catch(e){} }
-      }
-      await window.storage.delete(LOC_STORAGE_KEY, true);
-    }catch(e){}
-    locState = null;
-    document.getElementById('locSaveBtn').disabled = true;
-    document.getElementById('locClearBtn').disabled = true;
-    document.getElementById('locSearch').style.display = 'none';
-    document.getElementById('locCount').style.display = 'none';
-    document.getElementById('locTableScroll').style.display = 'none';
-    document.getElementById('locSaveIndicator').style.display = 'none';
-    updateLocMeta();
-  })();
+  if(!confirm('지금 화면에 보이는 미리보기만 지울까요? (실제 공유된 location_db.json 파일은 그대로예요 — 그것도 지우려면 GitHub 저장소에서 직접 지우거나 바꿔주세요)')) return;
+  locState = null;
+  document.getElementById('locDownloadBtn').disabled = true;
+  document.getElementById('locClearBtn').disabled = true;
+  document.getElementById('locSearch').style.display = 'none';
+  document.getElementById('locCount').style.display = 'none';
+  document.getElementById('locTableScroll').style.display = 'none';
+  updateLocMeta();
 }
 
 // ================= 바코드 조회 로직 =================
@@ -624,7 +464,7 @@ function init(){
   });
   document.getElementById('tabBtnScan').addEventListener('click', ()=> switchTab('scan'));
   document.getElementById('tabBtnLoc').addEventListener('click', ()=> switchTab('loc'));
-  document.getElementById('locSaveBtn').addEventListener('click', saveLocationDB);
+  document.getElementById('locDownloadBtn').addEventListener('click', downloadLocationDBJson);
   document.getElementById('locClearBtn').addEventListener('click', clearLocationDB);
   document.getElementById('locSearch').addEventListener('input', renderLocPreview);
 

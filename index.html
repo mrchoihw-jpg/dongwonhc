@@ -25,6 +25,7 @@
   .foot-note{font-size:12.5px; color:var(--ink-faint); line-height:1.6;}
   .btn{appearance:none; border:1px solid var(--line-strong); background:var(--panel-2); color:var(--ink); border-radius:9px; padding:9px 14px; font-size:14px; font-weight:600; cursor:pointer;}
   .btn:active{transform:translateY(1px);}
+  .btn:disabled{opacity:0.4; cursor:not-allowed;}
   .btn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
   .btn.danger{background:var(--red-bg); border-color:var(--red); color:var(--red);}
   .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
@@ -52,15 +53,18 @@
   <!-- ================= 로케이션DB 관리 ================= -->
   <div class="panel">
     <div class="sub-section-title">📦 로케이션DB</div>
-    <div class="foot-note" style="margin-bottom:10px;">
-      엑셀/CSV로 올려주세요 · 필수 열: <b>표준코드</b>(또는 바코드) · 선택 열: 바코드1~바코드5, 상품명, 재고위치, 분리보관장소, 보관방법, 가용재고 ·
-      같은 표준코드로 다시 올리면 예전 내용을 덮어써요 · 여기서 저장한 내용은 이 링크를 쓰는 모든 사람·기기에 공유돼요.
-    </div>
+    <details style="margin-bottom:10px;">
+      <summary style="cursor:pointer; font-size:12.5px; color:var(--ink-faint);">ℹ️ 업로드 안내 보기</summary>
+      <div class="foot-note" style="margin-top:6px;">
+        엑셀/CSV로 올려주세요 · 필수 열: <b>표준코드</b>(또는 바코드) · 선택 열: 바코드1~바코드5, 상품명, 재고위치, 분리보관장소, 보관방법, 가용재고 ·
+        같은 표준코드로 다시 올리면 예전 내용을 덮어써요 · <b>업로드 후 "저장" 버튼까지 눌러야</b> 이 링크를 쓰는 모든 사람·기기에 공유돼요.
+      </div>
+    </details>
     <div class="row">
       <label class="upload-drop" for="locFile">📁 파일 선택 (.xlsx / .xls / .csv)</label>
       <input type="file" id="locFile" accept=".xlsx,.xls,.csv" hidden>
-      <button class="btn primary" id="locSaveBtn" style="display:none;">💾 저장</button>
-      <button class="btn danger" id="locClearBtn" style="display:none;">데이터 지우기</button>
+      <button class="btn primary" id="locSaveBtn" disabled>💾 저장</button>
+      <button class="btn danger" id="locClearBtn" disabled>데이터 지우기</button>
     </div>
     <div class="row" style="margin-top:10px;">
       <div class="foot-note" id="locMeta">아직 업로드된 데이터가 없어요</div>
@@ -78,8 +82,11 @@
   <!-- ================= 바코드 스캔 ================= -->
   <div class="panel">
     <div class="sub-section-title">📷 바코드 스캔</div>
-    <div class="foot-note" style="margin-bottom:8px;">휴대폰 카메라로 제품 바코드(표준코드)를 비추면 자동으로 인식해서, 로케이션DB에 저장된 재고위치를 바로 보여줘요 · 카메라가 안 잡히거나 바코드가 손상됐으면 아래 칸에 코드를 직접 입력하셔도 돼요 · 이 브라우저에서 카메라 권한을 처음 물어보면 허용을 눌러주세요.</div>
-    <div class="foot-note" style="margin-bottom:12px; color:#c1791b;">⚠️ "카메라로 스캔 시작"을 눌렀는데 아무 반응이 없거나 화면이 까매요? 예전에 카메라 권한을 실수로 거부하셨으면, 브라우저가 다시 안 물어보고 조용히 막을 수 있어요 — 주소창 왼쪽 자물쇠(또는 "aA") 아이콘 → 사이트 설정 → 카메라를 "허용"으로 바꾸신 다음 새로고침해주세요.</div>
+    <details style="margin-bottom:12px;">
+      <summary style="cursor:pointer; font-size:12.5px; color:var(--ink-faint);">ℹ️ 사용법 / 카메라 안 될 때</summary>
+      <div class="foot-note" style="margin-top:6px;">휴대폰 카메라로 제품 바코드(표준코드)를 비추면 자동으로 인식해서, 로케이션DB에 저장된 재고위치를 바로 보여줘요 · 카메라가 안 잡히거나 바코드가 손상됐으면 아래 칸에 코드를 직접 입력하셔도 돼요 · 이 브라우저에서 카메라 권한을 처음 물어보면 허용을 눌러주세요.</div>
+      <div class="foot-note" style="margin-top:6px; color:#c1791b;">⚠️ "카메라로 스캔 시작"을 눌렀는데 아무 반응이 없거나 화면이 까매요? 예전에 카메라 권한을 실수로 거부하셨으면, 브라우저가 다시 안 물어보고 조용히 막을 수 있어요 — 주소창 왼쪽 자물쇠(또는 "aA") 아이콘 → 사이트 설정 → 카메라를 "허용"으로 바꾸신 다음 새로고침해주세요.</div>
+    </details>
 
     <div class="row" style="margin-bottom:12px;">
       <button class="btn primary" id="barcodeStartBtn">📷 카메라로 스캔 시작</button>
@@ -308,6 +315,8 @@ async function loadLocationDB(){
     updateLocMeta();
     renderLocPreview();
     setLocSaveState('saved');
+    document.getElementById('locSaveBtn').disabled = false;
+    document.getElementById('locClearBtn').disabled = false;
   }catch(e){ /* 아직 저장된 게 없거나 조회 실패 — 조용히 넘어가요 */ }
 }
 
@@ -348,8 +357,8 @@ async function handleLocFileSelect(file){
   const hasCode = ['표준코드','바코드','바코드1'].some(n => headers.includes(n));
   if(!hasCode){ alert('표준코드(또는 바코드) 열을 찾지 못했어요. 첫 행이 헤더인지 확인해주세요.'); return; }
   locState = { headers, rows, fileName: file.name, uploadedAt: new Date().toISOString(), savedAt: null, chunkCount:0, chunkVersion:null };
-  document.getElementById('locSaveBtn').style.display = 'inline-flex';
-  document.getElementById('locClearBtn').style.display = 'inline-flex';
+  document.getElementById('locSaveBtn').disabled = false;
+  document.getElementById('locClearBtn').disabled = false;
   updateLocMeta();
   renderLocPreview();
 }
@@ -382,8 +391,8 @@ function clearLocationDB(){
       await window.storage.delete(LOC_STORAGE_KEY, true);
     }catch(e){}
     locState = null;
-    document.getElementById('locSaveBtn').style.display = 'none';
-    document.getElementById('locClearBtn').style.display = 'none';
+    document.getElementById('locSaveBtn').disabled = true;
+    document.getElementById('locClearBtn').disabled = true;
     document.getElementById('locSearch').style.display = 'none';
     document.getElementById('locCount').style.display = 'none';
     document.getElementById('locTableScroll').style.display = 'none';

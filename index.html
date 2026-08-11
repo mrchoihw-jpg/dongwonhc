@@ -105,14 +105,7 @@
       </div>
     </div>
 
-    <div id="barcodeDetectedWrap" style="display:none; max-width:480px; margin-bottom:14px; background:var(--panel-2); border:2px solid var(--teal-ink); border-radius:12px; padding:12px 14px;">
-      <div class="foot-note" style="margin-bottom:4px;">이 코드가 맞나요?</div>
-      <div id="barcodeDetectedValue" style="font-size:15px; font-weight:700; font-family:var(--mono); word-break:break-all; margin-bottom:10px;"></div>
-      <div class="row">
-        <button class="btn primary" id="barcodeConfirmBtn" style="flex:1;">✅ 이 코드로 조회하기</button>
-        <button class="btn" id="barcodeDismissBtn">다시 스캔</button>
-      </div>
-    </div>
+
 
     <div class="row" style="margin-bottom:14px;">
       <input type="text" id="barcodeManualInput" placeholder="또는 표준코드를 직접 입력/붙여넣기" style="flex:1;">
@@ -350,13 +343,13 @@ async function startBarcodeScan(){
 
   const onDecode = (result)=>{
     if(!result || !_barcodeScanning || _barcodeAwaitingConfirm) return;
-    _barcodeAwaitingConfirm = true;
+    _barcodeAwaitingConfirm = true; // 같은 코드가 연속으로 여러 번 잡히는 걸 잠깐 막아요
     const rawText = result.getText();
     const gs1Code = extractGs1Gtin13(rawText); // GS1 2차원(DataMatrix 등)이면 표준코드만 뽑아내요
     _barcodeLastDetected = gs1Code || rawText;
-    document.getElementById('barcodeDetectedValue').textContent = _barcodeLastDetected;
-    document.getElementById('barcodeDetectedWrap').style.display = 'block';
-    statusEl.textContent = gs1Code ? '2차원 바코드에서 표준코드를 추출했어요 — 아래에서 확인해주세요.' : '코드가 인식됐어요 — 아래에서 확인해주세요.';
+    showBarcodeResult(lookupLocationByCode(_barcodeLastDetected));
+    statusEl.textContent = `✅ 조회 완료: ${_barcodeLastDetected} (계속 다른 상품을 비추면 다시 인식돼요)`;
+    setTimeout(()=>{ _barcodeAwaitingConfirm = false; }, 1200);
   };
   const withTimeout = (promise, ms)=> Promise.race([
     promise,
@@ -403,7 +396,6 @@ async function startBarcodeScan(){
 function stopBarcodeScan(){
   _barcodeScanning = false;
   _barcodeAwaitingConfirm = false;
-  document.getElementById('barcodeDetectedWrap').style.display = 'none';
   document.getElementById('barcodeZoomWrap').style.display = 'none';
   if(_barcodeReader){ try{ _barcodeReader.reset(); }catch(e){} _barcodeReader = null; }
   document.getElementById('barcodeVideoWrap').style.display = 'none';
@@ -428,18 +420,6 @@ function init(){
   });
   document.getElementById('barcodeManualInput').addEventListener('keydown', (e)=>{
     if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('barcodeManualBtn').click(); }
-  });
-  document.getElementById('barcodeConfirmBtn').addEventListener('click', ()=>{
-    if(!_barcodeLastDetected) return;
-    showBarcodeResult(lookupLocationByCode(_barcodeLastDetected));
-    document.getElementById('barcodeStatus').textContent = `✅ 조회 완료: ${_barcodeLastDetected} (계속 다른 상품을 비추면 다시 인식돼요)`;
-    document.getElementById('barcodeDetectedWrap').style.display = 'none';
-    _barcodeAwaitingConfirm = false;
-  });
-  document.getElementById('barcodeDismissBtn').addEventListener('click', ()=>{
-    document.getElementById('barcodeDetectedWrap').style.display = 'none';
-    document.getElementById('barcodeStatus').textContent = '다시 스캔해주세요.';
-    _barcodeAwaitingConfirm = false;
   });
 
   document.getElementById('locFile').addEventListener('change', (e)=>{

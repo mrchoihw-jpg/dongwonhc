@@ -26,6 +26,8 @@
   .btn{appearance:none; border:1px solid var(--line-strong); background:var(--panel-2); color:var(--ink); border-radius:9px; padding:9px 14px; font-size:14px; font-weight:600; cursor:pointer;}
   .btn:active{transform:translateY(1px);}
   .btn:disabled{opacity:0.4; cursor:not-allowed;}
+  .tab-btn{background:var(--panel); color:var(--ink-dim);}
+  .tab-btn.active{background:var(--accent); border-color:var(--accent); color:#fff;}
   .btn.primary{background:var(--accent); border-color:var(--accent); color:#fff;}
   .btn.danger{background:var(--red-bg); border-color:var(--red); color:var(--red);}
   .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
@@ -50,8 +52,13 @@
   <h1>📷 바코드 스캔 — 재고위치 조회</h1>
   <div class="sub">동원헬스케어 구매부 · 로케이션DB 기반</div>
 
+  <div class="row" style="justify-content:flex-start; margin-bottom:14px;">
+    <button class="btn tab-btn active" id="tabBtnScan">📷 바코드 스캔</button>
+    <button class="btn tab-btn" id="tabBtnLoc">📦 로케이션DB</button>
+  </div>
+
   <!-- ================= 로케이션DB 관리 ================= -->
-  <div class="panel">
+  <div class="panel" id="locPanel" style="display:none;">
     <div class="sub-section-title">📦 로케이션DB</div>
     <details style="margin-bottom:10px;">
       <summary style="cursor:pointer; font-size:12.5px; color:var(--ink-faint);">ℹ️ 업로드 안내 보기</summary>
@@ -79,8 +86,8 @@
     </div>
   </div>
 
-  <!-- ================= 바코드 스캔 ================= -->
-  <div class="panel">
+  <!-- ================= 바코드 스캔 (메인) ================= -->
+  <div class="panel" id="scanPanel">
     <div class="sub-section-title">📷 바코드 스캔</div>
     <details style="margin-bottom:12px;">
       <summary style="cursor:pointer; font-size:12.5px; color:var(--ink-faint);">ℹ️ 사용법 / 카메라 안 될 때</summary>
@@ -93,7 +100,7 @@
       <button class="btn" id="barcodeStopBtn" style="display:none;">■ 스캔 중지</button>
     </div>
 
-    <div id="barcodeVideoWrap" style="display:none; max-width:480px; margin-bottom:14px;">
+    <div id="barcodeVideoWrap" style="display:none; max-width:320px; margin-bottom:14px;">
       <div style="position:relative;">
         <video id="barcodeVideo" style="width:100%; display:block; background:#000; border:1px solid var(--line-strong);" playsinline autoplay muted></video>
       </div>
@@ -212,22 +219,27 @@ const MAX_VALUE_BYTES = 900 * 1024;
 function byteLengthOf(value){ return new TextEncoder().encode(JSON.stringify(value)).length; }
 function splitRowsIntoChunks(rows, maxBytes){
   if(rows.length === 0) return [[]];
-  if(byteLengthOf(rows) <= maxBytes) return [rows];
-  const chunks = []; let current = []; let currentBytes = 2;
-  for(let i=0;i<rows.length;i++){
-    const rowBytes = byteLengthOf([rows[i]]) - 2;
-    const added = rowBytes + (current.length>0 ? 1 : 0);
-    if(current.length>0 && currentBytes+added>maxBytes){ chunks.push(current); current=[rows[i]]; currentBytes=2+rowBytes; }
-    else { current.push(rows[i]); currentBytes += added; }
+  const totalBytes = byteLengthOf(rows);
+  if(totalBytes <= maxBytes) return [rows];
+  // 행 하나하나 크기를 재지 않고, 평균 행 크기로 한 번에 나눠요(수만 행이어도 즉시 계산돼요).
+  // 안전하게 목표치의 80%만 채워서, 유난히 긴 행이 몇 개 섞여도 1MB 한도를 넘지 않게 여유를 둡니다.
+  const avgBytes = totalBytes / rows.length;
+  const rowsPerChunk = Math.max(1, Math.floor((maxBytes * 0.8) / avgBytes));
+  const chunks = [];
+  for(let i=0;i<rows.length;i+=rowsPerChunk){
+    chunks.push(rows.slice(i, i+rowsPerChunk));
   }
-  if(current.length>0) chunks.push(current);
-  return chunks.length ? chunks : [[]];
+  return chunks;
+}
+function isNonRetryableError(e){
+  const code = e && (e.code || '');
+  return code === 'permission-denied' || code === 'unauthenticated' || code === 'invalid-argument';
 }
 async function storageSetWithRetry(key, value, shared, retries){
   retries = retries===undefined?4:retries; let lastErr=null;
   for(let a=0;a<=retries;a++){
     try{ const r = await window.storage.set(key, value, shared); if(r) return r; lastErr=new Error('빈 응답'); }
-    catch(e){ lastErr=e; }
+    catch(e){ lastErr=e; if(isNonRetryableError(e)) break; }
     if(a<retries) await new Promise(r=>setTimeout(r, 500+a*600));
   }
   throw lastErr;
@@ -258,6 +270,7 @@ function setLocSaveState(state, extra){
 async function saveLocationDB(){
   if(!locState) return;
   setLocSaveState('saving');
+  await new Promise(r => setTimeout(r, 0)); // "저장 중" 표시가 실제로 화면에 그려질 시간을 줘요
   try{
     const now = new Date().toISOString();
     const chunks = splitRowsIntoChunks(locState.rows, MAX_VALUE_BYTES);
@@ -288,7 +301,12 @@ async function saveLocationDB(){
     setLocSaveState('saved');
     updateLocMeta();
   }catch(e){
-    setLocSaveState('error', (e && e.message) || String(e));
+    const code = e && e.code;
+    let msg = (e && e.message) || String(e);
+    if(code === 'permission-denied'){
+      msg += ' — 이 도메인이 파이어베이스 App Check(reCAPTCHA) 허용 목록에 없을 수 있어요. 관리자에게 이 주소를 등록해달라고 요청해주세요.';
+    }
+    setLocSaveState('error', msg);
   }
 }
 
@@ -508,10 +526,12 @@ async function startBarcodeScan(){
   const onDecode = (result)=>{
     if(!result || !_barcodeScanning || _barcodeAwaitingConfirm) return;
     _barcodeAwaitingConfirm = true;
-    _barcodeLastDetected = result.getText();
+    const rawText = result.getText();
+    const gs1Code = extractGs1Gtin13(rawText); // GS1 2차원(DataMatrix 등)이면 표준코드만 뽑아내요
+    _barcodeLastDetected = gs1Code || rawText;
     document.getElementById('barcodeDetectedValue').textContent = _barcodeLastDetected;
     document.getElementById('barcodeDetectedWrap').style.display = 'block';
-    statusEl.textContent = '코드가 인식됐어요 — 아래에서 확인해주세요.';
+    statusEl.textContent = gs1Code ? '2차원 바코드에서 표준코드를 추출했어요 — 아래에서 확인해주세요.' : '코드가 인식됐어요 — 아래에서 확인해주세요.';
   };
   const withTimeout = (promise, ms)=> Promise.race([
     promise,
@@ -566,6 +586,15 @@ function stopBarcodeScan(){
   document.getElementById('barcodeStopBtn').style.display = 'none';
 }
 
+function switchTab(name){
+  const isScan = name === 'scan';
+  document.getElementById('scanPanel').style.display = isScan ? 'block' : 'none';
+  document.getElementById('locPanel').style.display = isScan ? 'none' : 'block';
+  document.getElementById('tabBtnScan').classList.toggle('active', isScan);
+  document.getElementById('tabBtnLoc').classList.toggle('active', !isScan);
+  if(!isScan && _barcodeScanning) stopBarcodeScan(); // 탭 벗어나면 카메라는 꺼줘요
+}
+
 function init(){
   document.getElementById('barcodeStartBtn').addEventListener('click', startBarcodeScan);
   document.getElementById('barcodeStopBtn').addEventListener('click', stopBarcodeScan);
@@ -593,6 +622,8 @@ function init(){
     if(file) handleLocFileSelect(file);
     e.target.value = '';
   });
+  document.getElementById('tabBtnScan').addEventListener('click', ()=> switchTab('scan'));
+  document.getElementById('tabBtnLoc').addEventListener('click', ()=> switchTab('loc'));
   document.getElementById('locSaveBtn').addEventListener('click', saveLocationDB);
   document.getElementById('locClearBtn').addEventListener('click', clearLocationDB);
   document.getElementById('locSearch').addEventListener('input', renderLocPreview);

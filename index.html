@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>동원헬스케어 구매부 대시보드</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#2f5fd6">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="구매부 대시보드">
 <style>
   :root{
     --bg: #eef1f7;
@@ -30,6 +36,11 @@
     --radius: 12px;
     --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
     --sans: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", sans-serif;
+    /* 표 안에서 sticky 요소들이 겹칠 때 층위가 꼬이지 않도록 계층을 명확히 나눠둡니다.
+       (툴바/검색창 > 표 헤더 > 고정열) 순으로, 스크롤할 때 항상 이 순서로 위에 보여요. */
+    --z-toolbar: 20;
+    --z-table-header: 10;
+    --z-fixed-col: 5;
   }
   /* 전체 앱 다크 테마 — html[data-theme="dark"]일 때 위 변수들을 다크 팔레트로 바꿔치기합니다.
      .rt-scope(반품신청서 편집화면)와 #printArea(실제 인쇄물)는 항상 흰 종이처럼 보여야 하므로
@@ -184,13 +195,15 @@
     .kpis{ grid-template-columns:repeat(3,1fr); }
     .tabs{ flex-direction:row; flex-wrap:wrap; }
     .mgr-scroll{ max-width:100%; min-width:0; }
+    /* 좁은 화면에서는 제목 옆에 붙어서 밀려 보이지 않게, 배지를 자기 줄로 확실히 내려서 보여줘요. */
+    .head-updated{ order:10; width:100%; margin-top:4px; }
   }
 
   /* toolbar */
   .toolbar{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; align-items:center; }
   /* 품절 현황 목록: 스크롤을 내려도 검색/필터 툴바와 표 헤더가 계속 보이게 고정합니다. */
-  .sticky-toolbar{ position:sticky; top:0; z-index:20; background:var(--bg); padding:10px 0 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
-  .sticky-head-table thead th{ position:sticky; top:0; z-index:10; background:var(--panel); box-shadow: 0 1px 0 var(--line); }
+  .sticky-toolbar{ position:sticky; top:0; z-index:var(--z-toolbar); background:var(--bg); padding:10px 0 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
+  .sticky-head-table thead th{ position:sticky; top:0; z-index:var(--z-table-header); background:var(--panel); box-shadow: 0 1px 0 var(--line); }
   .toolbar input[type="text"], .toolbar select{
     background:var(--panel); border:1px solid var(--line-strong); color:var(--ink);
     padding:8px 11px; border-radius:8px; font-size:13px; font-family:inherit; box-shadow: var(--shadow-sm);
@@ -209,7 +222,7 @@
   .table-scroll{ overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius); background:var(--panel); box-shadow: var(--shadow-sm); }
   table{ border-collapse:collapse; width:100%; font-size:13px; white-space:nowrap; }
   thead th{
-    position:sticky; top:0; z-index:10; background:#e7ecf5; color:var(--ink);
+    position:sticky; top:0; background:#e7ecf5; color:var(--ink);
     font-weight:700; font-size:11.5px; text-transform:uppercase; letter-spacing:.035em;
     padding:8px 12px; border-bottom:1px solid var(--line-strong); text-align:center; cursor:pointer;
     user-select:none;
@@ -239,13 +252,11 @@
   .mgr-scroll{ width:fit-content; max-width:100%; }
   #mgrTable td, #mgrTable th{ padding:6px 14px; border-bottom:1px solid var(--line); border-right:1px solid var(--line); }
   #mgrTable td:last-child, #mgrTable th:last-child{ border-right:none; }
-  #mgrTable tbody td:first-child{
-    position:sticky; left:0; z-index:5; background:#fff; box-shadow: 2px 0 4px rgba(19,27,44,0.05);
-  }
-  /* 상단(sticky top, z-index:10)과 좌측(sticky left, z-index:5)이 겹치는 모서리 헤더 셀은
-     두 레이어보다 위에 있어야 스크롤 시 다른 헤더 텍스트가 비쳐 보이지 않습니다. */
   #mgrTable thead th[data-key="manager"]{
-    position:sticky; left:0; z-index:15; background:#fff; box-shadow: 2px 0 4px rgba(19,27,44,0.05);
+    position:sticky; left:0; z-index:var(--z-table-header); background:#fff; box-shadow: 2px 0 4px rgba(19,27,44,0.05);
+  }
+  #mgrTable tbody td:first-child{
+    position:sticky; left:0; z-index:var(--z-fixed-col); background:#fff; box-shadow: 2px 0 4px rgba(19,27,44,0.05);
   }
   #mgrTable thead th.grp-head[colspan]{ position:relative; }
   #mgrTable tbody td:first-child{ font-weight:700; color:var(--ink); }
@@ -590,7 +601,7 @@
         <div class="sub">동원약품그룹 · <b id="dataDate">-</b> 기준 · 셀을 클릭해 값을 바로 수정할 수 있어요 · 저장한 내용은 이 대시보드를 보는 모든 사람에게 공유돼요 · <span id="lastSavedGlobal">아직 저장 이력 없음</span></div>
       </div>
     </div>
-    <div class="head-updated" id="dashUpdatedBadge">업데이트 2026-08-08 05:24</div>
+    <div class="head-updated" id="dashUpdatedBadge">업데이트 2026-08-11 09:45</div>
     <button class="btn" id="themeToggleBtn" style="align-self:flex-start;">🌙 다크 모드</button>
     <div class="head-actions">
       <button class="btn primary" id="saveBtn">💾 저장</button>
@@ -642,6 +653,7 @@
             <div class="tab" data-tab="productsearch2"><span class="tab-ic">🧪</span>제품정보검색2(테스트용)</div>
             <div class="tab" data-tab="pricehistory"><span class="tab-ic">💰</span>매입단가 변동 이력(테스트중)</div>
             <div class="tab" data-tab="checklist"><span class="tab-ic">✅</span>확인요망 통합함(테스트중)</div>
+            <div class="tab" data-tab="barcode"><span class="tab-ic">📷</span>바코드 스캔(테스트중)</div>
           </div>
         </div>
       </div>
@@ -906,10 +918,6 @@
             <span class="count-badge" id="count-stockHistoryYear"></span>
           </div>
           <div id="stockChartContainer" class="chart-box"></div>
-          <div class="chart-box" style="margin-top:14px;">
-            <div class="sub-section-title" style="font-size:13px;">Chart.js 콤보 차트 — 재고액·파손재고액(막대) + 매출액(꺾은선)</div>
-            <canvas id="stockComboChart" height="110"></canvas>
-          </div>
           <div class="foot-note">재고 및 반품 &gt; DB업데이트에서 우선처별 재고 및 매입실적 시트(광주·의정부 각 1개)를 올릴 때, 엑셀 파일명에서 연도·월을 자동으로 인식해 그 달(연도 표기가 없으면 올해)로 스냅샷이 저장돼요 · 연도·월 표기를 찾을 수 없으면 업로드한 날짜의 연·월로 저장돼요 · 전사 재고총액·파손재고총액·매출액이 그 달의 스냅샷으로 아래 그래프에 누적되고, 같은 달에 다시 업로드하면 그 달 값이 최신 데이터로 갱신돼요 (단위: 원, 엑셀 원본 그대로) · 막대 아래에 매출액·재고액·파손재고액 각각의 <b>전월 대비 증감율(%)</b>을 계열 색으로 표기해요 · 데이터가 쌓이면 위 연도 필터로 원하는 연도만 골라볼 수 있어요.</div>
         </div>
       </div>
@@ -1321,6 +1329,57 @@
               <tbody id="body-checklist"></tbody>
             </table>
           </div>
+        </div>
+      </div>
+
+      <!-- 바코드 스캔: 휴대폰 카메라로 제품 바코드를 찍으면 다미스제품코드마스터DB에서 표준코드로 찾아 재고위치를 보여줍니다 -->
+      <div class="panel" id="panel-barcode">
+        <div class="sub-section">
+          <div class="sub-section-title">📷 바코드 스캔 — 재고위치 조회</div>
+          <div class="foot-note" style="margin-bottom:8px;">휴대폰 카메라로 제품 바코드(표준코드)를 비추면 자동으로 인식해서, 다미스제품코드마스터DB에 저장된 재고위치를 바로 보여줘요 · 카메라가 안 잡히거나 바코드가 손상됐으면 아래 칸에 코드를 직접 입력하셔도 돼요 · 이 브라우저에서 카메라 권한을 처음 물어보면 허용을 눌러주세요.</div>
+          <div class="foot-note" style="margin-bottom:12px; color:var(--amber);">⚠️ "카메라로 스캔 시작"을 눌렀는데 아무 반응이 없거나 화면이 까매요? 예전에 카메라 권한을 실수로 거부하셨으면, 브라우저가 다시 안 물어보고 조용히 막을 수 있어요 — 주소창 왼쪽 자물쇠(또는 "aA") 아이콘 → 사이트 설정 → 카메라를 "허용"으로 바꾸신 다음 새로고침해주세요.</div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;">
+            <button class="btn primary" id="barcodeStartBtn">📷 카메라로 스캔 시작</button>
+            <button class="btn" id="barcodeStopBtn" style="display:none;">■ 스캔 중지</button>
+          </div>
+
+          <div id="barcodeVideoWrap" style="display:none; max-width:480px; margin-bottom:14px;">
+            <video id="barcodeVideo" style="width:100%; border-radius:12px; background:#000; border:1px solid var(--line-strong);" playsinline autoplay muted></video>
+            <div class="foot-note" style="margin-top:6px;">바코드를 화면 가운데 네모 안에 맞춰서 밝은 곳에서 비춰주세요.</div>
+          </div>
+
+          <div style="display:flex; gap:8px; align-items:center; max-width:480px; margin-bottom:16px;">
+            <input type="text" id="barcodeManualInput" placeholder="또는 표준코드를 직접 입력/붙여넣기" style="flex:1; background:var(--panel); border:1px solid var(--line-strong); color:var(--ink); border-radius:8px; padding:9px 12px;">
+            <button class="btn" id="barcodeManualBtn">조회</button>
+          </div>
+
+          <div id="barcodeResultWrap" style="display:none;">
+            <div class="sub-section" style="background:var(--panel-2); border-radius:12px; padding:16px;">
+              <div id="barcodeResultCode" class="foot-note" style="margin-bottom:6px;"></div>
+              <div id="barcodeResultName" style="font-size:20px; font-weight:800; color:var(--ink); margin-bottom:12px;"></div>
+              <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px;">
+                <div>
+                  <div class="foot-note">재고위치</div>
+                  <div id="barcodeResultLoc" style="font-size:22px; font-weight:800; color:var(--teal-ink);"></div>
+                </div>
+                <div>
+                  <div class="foot-note">가용재고</div>
+                  <div id="barcodeResultStock" style="font-size:18px; font-weight:700;"></div>
+                </div>
+                <div>
+                  <div class="foot-note">보관방법</div>
+                  <div id="barcodeResultStorage" style="font-size:15px;"></div>
+                </div>
+                <div>
+                  <div class="foot-note">분리보관</div>
+                  <div id="barcodeResultSeparate" style="font-size:15px;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div id="barcodeNotFound" style="display:none; color:var(--red); font-weight:700; padding:12px;"></div>
+          <div id="barcodeStatus" class="foot-note"></div>
         </div>
       </div>
 
@@ -1931,9 +1990,10 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1/umd/index.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 <script>
 /* =======================================================================
    FIREBASE 저장소 연동 (Claude.ai 밖 — 예: GitHub Pages — 에서 열었을 때만 사용됨)
@@ -1964,46 +2024,135 @@ const FIREBASE_CONFIG = {
 };
 const FIREBASE_COLLECTION = 'stockout_dashboard';
 
+// App Check: 이 사이트(dongwonhc.pages.dev)에서 온 요청인지 파이어베이스가 검증하도록 하는 값이에요.
+// Firebase 콘솔 > App Check > 대시보드(웹 앱) > reCAPTCHA v3에서 발급받은 사이트 키입니다.
+// 콘솔에서 Firestore의 "적용(Enforce)"을 켜기 전까지는 이 값이 있어도 아직 강제되지 않아요.
+const APP_CHECK_SITE_KEY = '6LcO73stAAAAAI9oYoHC3lu8E_yu5rg9oHkpfZWq';
+
 function isFirebaseConfigured(){
   return FIREBASE_CONFIG.apiKey && !/YOUR_/.test(FIREBASE_CONFIG.apiKey) && !/YOUR_/.test(FIREBASE_CONFIG.projectId || '');
 }
 
 let _fbDB = null;
+let _appCheckReadyPromise = null; // App Check 토큰이 준비될 때까지, 저장소 요청들이 기다릴 수 있게 해요.
 function getFirestore(){
   if(_fbDB) return _fbDB;
   if(typeof firebase === 'undefined') throw new Error('Firebase SDK가 로드되지 않았어요');
   if(!isFirebaseConfigured()) throw new Error('FIREBASE_CONFIG가 아직 설정되지 않았어요');
   if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  if(APP_CHECK_SITE_KEY && !/YOUR_/.test(APP_CHECK_SITE_KEY)){
+    if(typeof firebase.appCheck !== 'function'){
+      // App Check SDK 스크립트 자체가 안 불러와진 경우예요(광고차단기, 네트워크 차단, CDN 문제 등).
+      // 이러면 이 조건에 걸리지도 않고 그냥 조용히 넘어가버려서, 일부러 눈에 보이게 만들었어요.
+      showFirestoreErrorBanner(new Error('App Check SDK가 로드되지 않았어요 — firebase-app-check-compat.js 스크립트가 차단됐거나 못 불러와진 것 같아요. 광고 차단기·보안 확장 프로그램을 꺼보시거나 다른 브라우저로 시도해보세요.'));
+    } else {
+      try{
+        firebase.appCheck().activate(APP_CHECK_SITE_KEY, true);
+        // 활성화 자체는 성공해도, 실제로 reCAPTCHA 토큰을 발급받는 데 시간이 걸리거나 실패할 수 있어요.
+        // 이 토큰을 실제로 다 받을 때까지 기다리는 약속(Promise)을 만들어서, 아래 저장소 요청들이
+        // 이 약속이 끝날 때까지 기다렸다가 나가게 해요 — 그래야 "토큰 준비 전에 먼저 나간 요청만
+        // 권한 거부당하는" 문제가 안 생겨요.
+        _appCheckReadyPromise = firebase.appCheck().getToken()
+          .then(res=>{
+            const tokenPreview = (res && res.token) ? (res.token.slice(0,12) + '...') : '(토큰 없음)';
+            console.log('App Check 토큰 발급 성공:', tokenPreview);
+            showAppCheckStatusBanner(true, `App Check 토큰을 정상적으로 받았어요 (${tokenPreview})`);
+          })
+          .catch(tokenErr=>{
+            showAppCheckStatusBanner(false, 'App Check 토큰 발급 실패: ' + ((tokenErr && tokenErr.message) || tokenErr));
+            // 토큰을 못 받아도 여기서 영원히 멈추지 않고, 그냥 다음으로 넘어가게 해요
+            // (Firestore 규칙이 어차피 거부할 테니, 그 실패는 아래 permission-denied로 이어져요).
+          });
+      }catch(e){ console.warn('App Check 활성화에 실패했어요:', e); showFirestoreErrorBanner(e); }
+    }
+  }
   _fbDB = firebase.firestore();
   return _fbDB;
 }
 
 // window.storage와 동일한 인터페이스(get/set/delete/list)를 Firestore로 구현합니다.
 // Claude.ai 아티팩트 안에서 열렸다면 window.storage가 이미 존재하므로 이 shim은 쓰이지 않습니다.
+// 파이어베이스 관련 상태(성공/실패)를 화면 맨 위에 배너로 보여줘요. 개발자도구 없이도 정확히
+// 뭐가 문제인지(또는 정상인지) 바로 보여서, "그냥 안 보인다"가 아니라 진짜 원인을 알 수 있게 해요.
+function getFbBannerStack(){
+  let stack = document.getElementById('fbBannerStack');
+  if(!stack){
+    stack = document.createElement('div');
+    stack.id = 'fbBannerStack';
+    stack.style.cssText = 'position:fixed; top:0; left:0; right:0; z-index:9999; display:flex; flex-direction:column;';
+    document.body.prepend(stack);
+  }
+  return stack;
+}
+
+let _fbErrorBannerShown = false;
+function showFirestoreErrorBanner(err){
+  if(_fbErrorBannerShown) return; // 같은 세션에서 계속 반복해서 뜨지 않게, 처음 한 번만 보여줘요.
+  _fbErrorBannerShown = true;
+  const msg = (err && err.message) || String(err);
+  const code = (err && err.code) ? ` (코드: ${err.code})` : '';
+  const div = document.createElement('div');
+  div.style.cssText = 'background:#5c1a1a; color:#fff; padding:12px 16px; font-size:13px; line-height:1.6; box-shadow:0 2px 8px rgba(0,0,0,0.3);';
+  div.innerHTML = `⚠️ <b>파이어베이스 요청이 실패했어요${code}</b><br>${msg}<br><span style="opacity:0.85;">이 메시지를 그대로 캡처해서 보내주시면 원인을 정확히 찾을 수 있어요.</span>
+    <button onclick="this.parentElement.remove()" style="float:right; background:transparent; border:1px solid #fff; color:#fff; border-radius:6px; padding:2px 10px; cursor:pointer;">닫기</button>`;
+  getFbBannerStack().appendChild(div);
+}
+
+// App Check 토큰이 성공했는지 실패했는지를 개발자도구 없이 화면에서 바로 볼 수 있게 보여줘요.
+let _appCheckStatusBannerShown = false;
+function showAppCheckStatusBanner(success, msg){
+  if(_appCheckStatusBannerShown) return;
+  _appCheckStatusBannerShown = true;
+  const div = document.createElement('div');
+  const bg = success ? '#1a4d2e' : '#5c1a1a';
+  div.style.cssText = `background:${bg}; color:#fff; padding:10px 16px; font-size:13px; line-height:1.6; box-shadow:0 2px 8px rgba(0,0,0,0.3);`;
+  div.innerHTML = `${success ? '✅' : '⚠️'} <b>App Check 상태</b>: ${msg}
+    <button onclick="this.parentElement.remove()" style="float:right; background:transparent; border:1px solid #fff; color:#fff; border-radius:6px; padding:2px 10px; cursor:pointer;">닫기</button>`;
+  getFbBannerStack().appendChild(div);
+}
+
+// getFirestore()가 만들어둔 "토큰 준비" 약속이 끝날 때까지 기다립니다. App Check을 안 쓰는 경우
+// (Claude.ai 안에서 열렸거나 App Check 설정이 없는 경우)엔 이 약속 자체가 없으니 그냥 바로 지나가요.
+async function ensureAppCheckReady(){
+  if(_appCheckReadyPromise) await _appCheckReadyPromise;
+}
+
 const firebaseStorageShim = {
   async get(key, shared){
-    const db = getFirestore();
-    const snap = await db.collection(FIREBASE_COLLECTION).doc(key).get();
-    if(!snap.exists) return null;
-    const data = snap.data();
-    return { key, value: data.value, shared: !!shared };
+    try{
+      const db = getFirestore();
+      await ensureAppCheckReady();
+      const snap = await db.collection(FIREBASE_COLLECTION).doc(key).get();
+      if(!snap.exists) return null;
+      const data = snap.data();
+      return { key, value: data.value, shared: !!shared };
+    }catch(err){ showFirestoreErrorBanner(err); throw err; }
   },
   async set(key, value, shared){
-    const db = getFirestore();
-    await db.collection(FIREBASE_COLLECTION).doc(key).set({ value, updatedAt: new Date().toISOString() });
-    return { key, value, shared: !!shared };
+    try{
+      const db = getFirestore();
+      await ensureAppCheckReady();
+      await db.collection(FIREBASE_COLLECTION).doc(key).set({ value, updatedAt: new Date().toISOString() });
+      return { key, value, shared: !!shared };
+    }catch(err){ showFirestoreErrorBanner(err); throw err; }
   },
   async delete(key, shared){
-    const db = getFirestore();
-    await db.collection(FIREBASE_COLLECTION).doc(key).delete();
-    return { key, deleted: true, shared: !!shared };
+    try{
+      const db = getFirestore();
+      await ensureAppCheckReady();
+      await db.collection(FIREBASE_COLLECTION).doc(key).delete();
+      return { key, deleted: true, shared: !!shared };
+    }catch(err){ showFirestoreErrorBanner(err); throw err; }
   },
   async list(prefix, shared){
-    const db = getFirestore();
-    const snap = await db.collection(FIREBASE_COLLECTION).get();
-    const keys = [];
-    snap.forEach(doc => { if(!prefix || doc.id.startsWith(prefix)) keys.push(doc.id); });
-    return { keys, prefix, shared: !!shared };
+    try{
+      const db = getFirestore();
+      await ensureAppCheckReady();
+      const snap = await db.collection(FIREBASE_COLLECTION).get();
+      const keys = [];
+      snap.forEach(doc => { if(!prefix || doc.id.startsWith(prefix)) keys.push(doc.id); });
+      return { keys, prefix, shared: !!shared };
+    }catch(err){ showFirestoreErrorBanner(err); throw err; }
   }
 };
 
@@ -2036,127 +2185,6 @@ function initStorageBanner(){
     badgeHost.appendChild(badge);
   }
 }
-</script>
-<script>
-/* =======================================================================
-   [고도화 패치] 안전한 숫자 파싱 유틸 (전역)
-   -----------------------------------------------------------------------
-   null / undefined / 빈 문자열 / 쉼표 포함 금액 문자열("1,234,567원" 등)도
-   NaN 오류 없이 항상 숫자(빈 값은 0)를 돌려줍니다. 기존 코드 곳곳의
-   `Number(v)||0` 패턴을 대체하지는 않았습니다(11,000줄 전체를 건드리는 건
-   surgical 원칙에 어긋나고 회귀 위험이 큽니다) — 대신 이 함수를 전역
-   유틸리티로 노출해서, 아래 새로 추가하는 기능들과 앞으로 추가/수정하는
-   코드가 공통으로 이 함수 하나만 쓰도록 통일합니다.
-   ======================================================================= */
-function safeNum(v){
-  if(v === null || v === undefined) return 0;
-  if(typeof v === 'number') return isNaN(v) ? 0 : v;
-  const s = String(v).trim().replace(/,/g, '');
-  if(s === '') return 0;
-  const n = Number(s);
-  return isNaN(n) ? 0 : n;
-}
-window.safeNum = safeNum;
-
-/* =======================================================================
-   [고도화 패치] IndexedDB 오프라인 자동 저장 캐시
-   -----------------------------------------------------------------------
-   기존 window.storage(Claude.ai 저장소 또는 위 Firebase shim)의 동작은
-   전혀 바꾸지 않습니다. 이 블록은 window.storage.get/set을 한 번만 감싸서
-   그 위에 로컬 백업을 얹습니다:
-     - set() 이 호출될 때마다(=데이터 수정 시) 같은 값을 IndexedDB에도
-       실시간으로 저장합니다.
-     - get() 이 실패하면(오프라인 등으로 클라우드 접근 불가) IndexedDB에
-       남아있는 마지막 저장값으로 자동 복구합니다. 클라우드가 정상이면
-       원래 결과를 그대로 돌려주므로 기존 동작과 100% 동일합니다.
-     - 저장 상태 표시기("모든 변경사항 저장됨")를 헤더에 붙입니다.
-   ======================================================================= */
-const IDB_NAME = 'stockout_dashboard_offline_cache_v1';
-const IDB_STORE = 'kv';
-let _idbPromise = null;
-function openOfflineCache(){
-  if(_idbPromise) return _idbPromise;
-  _idbPromise = new Promise((resolve, reject)=>{
-    if(!('indexedDB' in window)){ reject(new Error('이 브라우저는 IndexedDB를 지원하지 않아요')); return; }
-    const req = indexedDB.open(IDB_NAME, 1);
-    req.onupgradeneeded = ()=>{ req.result.createObjectStore(IDB_STORE); };
-    req.onsuccess = ()=> resolve(req.result);
-    req.onerror = ()=> reject(req.error);
-  });
-  return _idbPromise;
-}
-async function idbSet(key, value){
-  try{
-    const db = await openOfflineCache();
-    await new Promise((resolve, reject)=>{
-      const tx = db.transaction(IDB_STORE, 'readwrite');
-      tx.objectStore(IDB_STORE).put({ value, savedAt: new Date().toISOString() }, key);
-      tx.oncomplete = resolve; tx.onerror = ()=> reject(tx.error);
-    });
-  }catch(e){ /* IndexedDB를 못 쓰는 환경이면 조용히 무시 — 기존 저장 흐름엔 영향 없음 */ }
-}
-async function idbGet(key){
-  try{
-    const db = await openOfflineCache();
-    return await new Promise((resolve, reject)=>{
-      const tx = db.transaction(IDB_STORE, 'readonly');
-      const req = tx.objectStore(IDB_STORE).get(key);
-      req.onsuccess = ()=> resolve(req.result || null);
-      req.onerror = ()=> reject(req.error);
-    });
-  }catch(e){ return null; }
-}
-let _offlineSavedTimer = null;
-function setOfflineIndicator(mode){
-  let el = document.getElementById('offlineCacheIndicator');
-  if(!el){
-    const host = document.querySelector('.head .sub');
-    if(!host) return;
-    el = document.createElement('span');
-    el.id = 'offlineCacheIndicator';
-    el.className = 'storage-badge ok';
-    el.style.marginLeft = '8px';
-    host.appendChild(el);
-  }
-  clearTimeout(_offlineSavedTimer);
-  if(mode === 'saving'){
-    el.textContent = '오프라인 캐시 저장 중…';
-  } else if(mode === 'saved'){
-    el.textContent = '모든 변경사항 저장됨';
-  }
-}
-(function wrapStorageWithOfflineCache(){
-  if(!window.storage || window.storage.__offlineCacheWrapped) return;
-  const original = window.storage;
-  window.storage = {
-    __offlineCacheWrapped: true,
-    async get(key, shared){
-      try{
-        const res = await original.get(key, shared);
-        if(res && res.value !== undefined) idbSet(key, res.value);
-        return res;
-      }catch(e){
-        const cached = await idbGet(key);
-        if(cached) return { key, value: cached.value, shared: !!shared };
-        throw e;
-      }
-    },
-    async set(key, value, shared){
-      setOfflineIndicator('saving');
-      idbSet(key, value);
-      try{
-        const res = await original.set(key, value, shared);
-        setOfflineIndicator('saved');
-        return res;
-      }catch(e){
-        setOfflineIndicator('saved'); // 로컬엔 이미 저장됨 — 클라우드 저장 실패는 원래 하던 대로 위로 전달
-        throw e;
-      }
-    },
-    async delete(key, shared){ return original.delete(key, shared); },
-    async list(prefix, shared){ return original.list(prefix, shared); }
-  };
-})();
 </script>
 <script>
 
@@ -2593,10 +2621,16 @@ function bindGlobalEvents(){
       document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
       document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
       tab.classList.add('active');
-      document.getElementById('panel-' + tab.dataset.tab).classList.add('active');
+      const activePanel = document.getElementById('panel-' + tab.dataset.tab);
+      activePanel.classList.add('active');
       if(tab.dataset.tab === 'checklist') renderChecklist();
       if(tab.dataset.tab === 'pricehistory') renderPriceHistoryList();
       if(tab.dataset.tab === 'summary') renderSummaryDashboard();
+      // 좁은 화면(모바일)에서는 사이드바(탭 목록)가 위에 길게 있어서, 탭을 눌러도 실제 내용을
+      // 보려면 매번 손으로 한참 내려야 했어요. 탭을 누르면 그 내용이 있는 자리로 자동으로 스크롤해줘요.
+      if(window.innerWidth <= 900){
+        setTimeout(()=> activePanel.scrollIntoView({ behavior:'smooth', block:'start' }), 50);
+      }
     });
   });
 
@@ -3143,7 +3177,9 @@ function setUploadSaveState(id, state, errMsg){
 // made the save silently fail. To fix this, rows are split across multiple keys
 // (`${storageKey}_chunk_0`, `_chunk_1`, ...) whenever the serialized rows would be too big,
 // and reassembled on load. Small uploads are still saved as a single key, unchanged.
-const MAX_VALUE_BYTES = 1.2 * 1024 * 1024; // ~1.2MB target per key — more conservative than the 5MB hard limit,
+const MAX_VALUE_BYTES = 900 * 1024; // Firestore 문서 하나의 실제 한도는 1,048,576바이트(1MB)예요.
+// 예전 값(1.2MB)은 그 한도보다 커서 실제로 "invalid-argument: value longer than 1048487 bytes" 오류가
+// 났었어요 — 이제 한도보다 확실히 낮게 잡아서(900KB) 문서 하나가 절대 한도를 넘지 않게 해요.
                                             // since saves of datasets in the low single-MB range have been failing in practice
 
 function byteLengthOf(value){
@@ -3189,14 +3225,26 @@ function splitRowsIntoChunks(rows, maxBytes){
   if(rows.length === 0) return [[]];
   const totalBytes = byteLengthOf(rows);
   if(totalBytes <= maxBytes) return [rows];
-  // +15% safety buffer since row sizes can vary a bit from the average
-  const numChunks = Math.max(2, Math.ceil((totalBytes / maxBytes) * 1.15));
-  const chunkSize = Math.ceil(rows.length / numChunks);
+  // 행 크기가 들쭉날쭉해도 어떤 조각도 절대 한도를 넘지 않도록, 한 줄씩 실제로 더해보면서
+  // 한도를 넘기 직전까지만 채우고 다음 조각으로 넘어가는 방식으로 나눠요(추정치 기반 균등분할이
+  // 아니라서, 유난히 큰 행이 몰려있어도 안전해요).
   const chunks = [];
-  for(let i=0; i<rows.length; i+=chunkSize){
-    chunks.push(rows.slice(i, i+chunkSize));
+  let current = [];
+  let currentBytes = 2; // 빈 배열 "[]"의 바이트 수
+  for(let i=0; i<rows.length; i++){
+    const rowBytes = byteLengthOf([rows[i]]) - 2; // 그 행 하나만의 순수 바이트 수(대괄호 제외)
+    const addedBytes = rowBytes + (current.length > 0 ? 1 : 0); // 쉼표 1바이트(첫 행이면 없음)
+    if(current.length > 0 && currentBytes + addedBytes > maxBytes){
+      chunks.push(current);
+      current = [rows[i]];
+      currentBytes = 2 + rowBytes;
+    } else {
+      current.push(rows[i]);
+      currentBytes += addedBytes;
+    }
   }
-  return chunks;
+  if(current.length > 0) chunks.push(current);
+  return chunks.length ? chunks : [[]];
 }
 
 async function saveUpload(id){
@@ -3308,10 +3356,42 @@ async function loadUploadFromStorage(id){
   }catch(e){ /* nothing saved yet */ }
 }
 
+// 지금 저장돼있는 데이터를 그대로 엑셀 파일로 다시 내려받을 수 있게 해줘요 — 백업용으로 쓰거나,
+// 대시보드 없이 PC 엑셀에서 따로 작업하고 싶을 때 원본 대신 이 파일을 쓰시면 돼요.
+function downloadUploadedData(id){
+  const st = uploadState[id];
+  if(!st || !st.rows || !st.rows.length){ alert('다운로드할 데이터가 아직 없어요.'); return; }
+  const cfg = UPLOAD_CONFIGS[id] || {};
+  const aoa = [st.headers, ...st.rows];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  const safeName = (cfg.label || id).replace(/[\\/:*?"<>|]/g, '_');
+  XLSX.writeFile(wb, `${safeName}_${todayKey()}.xlsx`, { bookType:'xlsx' });
+}
+
+// 업로드 항목마다 있는 "초기화/데이터 지우기" 버튼 바로 앞에, 다운로드 버튼을 자동으로 하나씩 추가해요.
+// 업로드 종류가 많아서(마스터DB·재고·품절 등) HTML을 하나하나 다 고치는 대신, 있는 버튼을 기준으로
+// 한 번에 붙여넣어요 — 새 업로드 항목이 추가돼도 자동으로 같이 생겨요.
+function addDownloadButtonsForUploads(){
+  Object.keys(UPLOAD_CONFIGS).forEach(id=>{
+    const clearBtn = document.getElementById('clear-' + id);
+    if(!clearBtn || document.getElementById('download-' + id)) return;
+    const btn = document.createElement('button');
+    btn.className = 'btn';
+    btn.id = 'download-' + id;
+    btn.textContent = '⬇ 저장된 자료 다운로드';
+    btn.style.display = 'none';
+    btn.addEventListener('click', ()=> downloadUploadedData(id));
+    clearBtn.parentNode.insertBefore(btn, clearBtn);
+  });
+}
+
 function updateUploadMeta(id){
   const st = uploadState[id];
   const meta = document.getElementById('meta-' + id);
   const clearBtn = document.getElementById('clear-' + id);
+  const downloadBtn = document.getElementById('download-' + id);
   const saveBtn = document.getElementById('save-' + id);
   const saveState = document.getElementById('saveState-' + id);
   const toolbar = document.getElementById('toolbar-' + id);
@@ -3319,6 +3399,7 @@ function updateUploadMeta(id){
   if(!st){
     meta.textContent = '아직 업로드된 데이터가 없어요';
     clearBtn.style.display = 'none';
+    if(downloadBtn) downloadBtn.style.display = 'none';
     if(saveBtn) saveBtn.style.display = 'none';
     if(saveState) saveState.style.display = 'none';
     toolbar.style.display = 'none';
@@ -3336,6 +3417,7 @@ function updateUploadMeta(id){
   meta.innerHTML = `${dt.toLocaleString('ko-KR')} 업로드${savedPart}${trimPart}${missingPart}`;
   meta.title = meta.textContent;
   clearBtn.style.display = 'inline-flex';
+  if(downloadBtn) downloadBtn.style.display = 'inline-flex';
   if(saveBtn) saveBtn.style.display = 'inline-flex';
   if(saveState){ saveState.style.display = 'flex'; setUploadSaveState(id, st.savedAt ? 'saved' : 'idle'); }
   toolbar.style.display = 'flex';
@@ -3603,6 +3685,7 @@ async function syncReturnmgrToVendorMaster(){
 
 async function initUploadTabs(){
   Object.keys(UPLOAD_CONFIGS).forEach(bindUploadTab);
+  addDownloadButtonsForUploads();
   for(const id of Object.keys(UPLOAD_CONFIGS)){
     await loadUploadFromStorage(id);
   }
@@ -4653,45 +4736,6 @@ function renderStockChart(){
       ${series.map(s=>`<span><span class="sw" style="background:${s.color};"></span>${s.label}(원) · 색칠된 %는 전월 대비 증감율</span>`).join('')}
     </div>`;
   attachChartTooltip(el);
-  renderStockComboChart(data, series);
-}
-
-/* [고도화 패치] Chart.js 콤보 차트(막대: 재고액·파손재고액 / 꺾은선: 매출액)
-   위 renderStockChart()가 이미 계산해 둔 data/series를 그대로 재사용합니다.
-   다크모드↔라이트모드 전환 시 applyAppTheme()에서 이 함수를 다시 호출해
-   텍스트·격자선 색이 실시간으로 동기화됩니다. */
-let _stockComboChartInstance = null;
-function renderStockComboChart(data, series){
-  const canvas = document.getElementById('stockComboChart');
-  if(!canvas || typeof Chart === 'undefined') return;
-  const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#4c5a72';
-  const ink = cssVar('--ink-dim');
-  const gridColor = cssVar('--line');
-  const find = key => (series.find(s=>s.key===key) || {});
-  const stockS = find('totalStock'), damagedS = find('totalDamaged'), salesS = find('totalSales');
-  const labels = data.map(d=>d.month);
-  const datasets = [
-    { type:'bar', label: stockS.label || '재고액', data: data.map(d=>safeNum(d.totalStock)), backgroundColor: stockS.color || '#16a34a', yAxisID:'y' },
-    { type:'bar', label: damagedS.label || '파손재고액', data: data.map(d=>safeNum(d.totalDamaged)), backgroundColor: damagedS.color || '#d1483f', yAxisID:'y' },
-    { type:'line', label: salesS.label || '매출액', data: data.map(d=>safeNum(d.totalSales)), borderColor: salesS.color || '#2f5fd6', backgroundColor:'transparent', tension:0.3, yAxisID:'y1' }
-  ];
-  if(_stockComboChartInstance){ _stockComboChartInstance.destroy(); }
-  _stockComboChartInstance = new Chart(canvas.getContext('2d'), {
-    data: { labels, datasets },
-    options: {
-      responsive:true,
-      interaction:{ mode:'index', intersect:false },
-      plugins:{
-        legend:{ labels:{ color: ink } },
-        tooltip:{ callbacks:{ label: ctx => `${ctx.dataset.label}: ${Math.round(ctx.raw||0).toLocaleString()}원` } }
-      },
-      scales:{
-        x:{ ticks:{ color: ink }, grid:{ color: gridColor } },
-        y:{ position:'left', ticks:{ color: ink }, grid:{ color: gridColor }, title:{ display:true, text:'재고·파손재고액(원)', color: ink } },
-        y1:{ position:'right', ticks:{ color: ink }, grid:{ display:false }, title:{ display:true, text:'매출액(원)', color: ink } }
-      }
-    }
-  });
 }
 
 // ---------- 파손재고현황(월별 파손재고 전월 대비 증감율) ----------
@@ -5267,6 +5311,7 @@ function renderSupplyCalcTable(){
 function roundBy(kind, v){
   if(kind === 'floor') return Math.floor(v);
   if(kind === 'ceil') return Math.ceil(v);
+  if(kind === 'none') return v; // 반올림 없이 그대로(소수점까지 전부 유지)
   return Math.round(v);
 }
 
@@ -5309,6 +5354,22 @@ function sciNotationSigFigs(str){
   const m = String(str).trim().match(/^-?\d(?:\.\d+)?[eE]\+?-?\d+$/);
   if(!m) return null;
   return m[0].split(/[eE]/)[0].replace(/[.\-]/g,'').length;
+}
+
+// 방어적 파싱 유틸 — null/undefined/공백/NaN/콤마 섞인 문자열 등 무엇이 들어와도 예외 없이
+// 안전한 기본값을 돌려줍니다. 화면에 "NaN"이나 "Invalid Date" 같은 값이 그대로 노출되는 걸 막아요.
+function parseNumberSafe(v, fallback){
+  if(fallback === undefined) fallback = 0;
+  if(v === null || v === undefined || v === '') return fallback;
+  const n = Number(String(v).replace(/,/g,'').trim());
+  return isNaN(n) ? fallback : n;
+}
+function formatDateSafe(v, fallback){
+  if(fallback === undefined) fallback = '';
+  if(v === null || v === undefined || v === '') return fallback;
+  const s = parseFlexibleDateToYYYYMMDD(v); // 아래(약가등재 섹션)에 정의된, 여러 날짜 형식을 알아보는 함수를 그대로 재사용해요.
+  if(!s || !/^\d{8}$/.test(s)) return fallback;
+  return `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`;
 }
 
 function buildProductBarcodeMap(){
@@ -6006,7 +6067,7 @@ async function initSupplyTab(){
 }
 
 // ================= 매입전표입력(엑셀)-스카이젯 =================
-// 매입전표입력(엑셀)의 공급내역신고 계산기와 완전히 동일한 기능입니다(계산기/7모드 자동판별/
+// 매입전표입력(엑셀)의 공급내역신고 계산기와 완전히 동일한 기능입니다(계산기/8모드 자동판별/
 // 확인요망·임박/편집/열너비 저장/내보내기 전부 동일). 다만 이 tempXxx 변수들과 저장소 키는
 // 진짜 공급내역신고(supplyXxx)와 완전히 분리돼 있어서, 여기서 무엇을 하든 실제 매입전표입력
 // 데이터에는 전혀 영향을 주지 않습니다(임시·테스트 확인용).
@@ -6025,6 +6086,7 @@ const TEMP_MODES = [
   { id:'별도-단가(내림)', label:'별도-단가(내림)', base:'unit', round:'floor' },
   { id:'별도-단가(반올림)', label:'별도-단가(반올림)', base:'unit', round:'round' },
   { id:'별도-단가(올림)', label:'별도-단가(올림)', base:'unit', round:'ceil' },
+  { id:'별도-단가(그대로)', label:'별도-단가(그대로)', base:'unit', round:'none' },
 ];
 const TEMP_COLUMNS = [
   { key:'productCode', label:'제품코드', width:68 },
@@ -6045,7 +6107,7 @@ const TEMP_COLUMNS = [
 ];
 
 let tempRawRows = [];      // 파싱된 원본 22열 행들
-let tempComputed = [];     // 매칭 + 7가지 모드 계산까지 끝난 행들 (모드 선택 전)
+let tempComputed = [];     // 매칭 + 8가지 모드 계산까지 끝난 행들 (모드 선택 전)
 let tempFinalRows = [];    // 자동 판별된 모드로 확정된, 화면에 보여주고 수정 가능한 행들
 let tempSelectedVendor = null;   // {name, vat} — 배치의 대표 거래처 (첫 매칭 성공 행 기준)
 let tempDecision = null;   // { mode, reason, diff }
@@ -6284,7 +6346,7 @@ function computeTempResults(){
   finalizeTempMode();
 }
 
-// 거래처의 매입전표부가세(포함/별도)와 계산기의 공급가 합계를 참고해 7가지 중 하나를 자동으로 고릅니다.
+// 거래처의 매입전표부가세(포함/별도)와 계산기의 공급가 합계를 참고해 8가지 중 하나를 자동으로 고릅니다.
 function decideTempMode(){
   const refTotal = tempCalcReferenceTotal();
   const vendorVatRaw = String((tempSelectedVendor && tempSelectedVendor.vat) || '').trim();
@@ -6300,7 +6362,7 @@ function decideTempMode(){
   if(refTotal === null){
     return {
       mode:'별도-합계액(반올림)', diff:null,
-      reason:'별도 방식 6가지 중 하나를 고르려면 왼쪽 간이 계산기에 세금계산서 공급가를 입력해주세요 — 아직 입력이 없어서 기본값인 별도-합계액(반올림)을 사용했어요.'
+      reason:'별도 방식 7가지 중 하나를 고르려면 왼쪽 간이 계산기에 세금계산서 공급가를 입력해주세요 — 아직 입력이 없어서 기본값인 별도-합계액(반올림)을 사용했어요.'
     };
   }
   let best = null;
@@ -6309,7 +6371,7 @@ function decideTempMode(){
     const diff = Math.abs(sum - refTotal);
     if(!best || diff < best.diff) best = { mode:m.id, diff, sum };
   });
-  const vendorNote = `거래처정보마스터DB의 매입전표부가세가 '별도'라 별도 6가지 중`;
+  const vendorNote = `거래처정보마스터DB의 매입전표부가세가 '별도'라 별도 7가지 중`;
   let matchNote;
   if(best.diff === 0) matchNote = '계산기 공급가 합계와 정확히 일치하는 방식을 찾았어요.';
   else if(best.diff <= 50) matchNote = `계산기 공급가 합계와 ${best.diff.toLocaleString()}원 차이로 거의 일치하는 방식을 찾았어요.`;
@@ -6700,6 +6762,7 @@ const TEMP_PHARMREG_MODES = [
   { id:'별도-단가(내림)', label:'별도-단가(내림)', base:'unit', round:'floor' },
   { id:'별도-단가(반올림)', label:'별도-단가(반올림)', base:'unit', round:'round' },
   { id:'별도-단가(올림)', label:'별도-단가(올림)', base:'unit', round:'ceil' },
+  { id:'별도-단가(그대로)', label:'별도-단가(그대로)', base:'unit', round:'none' },
 ];
 const TEMP_PHARMREG_COLUMNS = [
   { key:'productCode', label:'제품코드', width:68 },
@@ -6720,7 +6783,7 @@ const TEMP_PHARMREG_COLUMNS = [
 ];
 
 let tempPharmregRawRows = [];      // 파싱된 원본 22열 행들
-let tempPharmregComputed = [];     // 매칭 + 7가지 모드 계산까지 끝난 행들 (모드 선택 전)
+let tempPharmregComputed = [];     // 매칭 + 8가지 모드 계산까지 끝난 행들 (모드 선택 전)
 let tempPharmregFinalRows = [];    // 자동 판별된 모드로 확정된, 화면에 보여주고 수정 가능한 행들
 let tempPharmregSelectedVendor = null;   // {name, vat} — 배치의 대표 거래처 (첫 매칭 성공 행 기준)
 let tempPharmregDecision = null;   // { mode, reason, diff }
@@ -7229,7 +7292,7 @@ function decideTempPharmregMode(){
   if(refTotal === null){
     return {
       mode:'별도-합계액(반올림)', diff:null,
-      reason:'별도 방식 6가지 중 하나를 고르려면 왼쪽 간이 계산기에 세금계산서 공급가를 입력해주세요 — 아직 입력이 없어서 기본값인 별도-합계액(반올림)을 사용했어요.'
+      reason:'별도 방식 7가지 중 하나를 고르려면 왼쪽 간이 계산기에 세금계산서 공급가를 입력해주세요 — 아직 입력이 없어서 기본값인 별도-합계액(반올림)을 사용했어요.'
     };
   }
   let best = null;
@@ -7239,8 +7302,8 @@ function decideTempPharmregMode(){
     if(!best || diff < best.diff) best = { mode:m.id, diff, sum };
   });
   const vendorNote = (forcedVat === '별도' && vendorVatRaw !== '별도')
-    ? `이 제약사는 항상 부가세 별도 자료라서 별도 6가지 중`
-    : `거래처정보마스터DB의 매입전표부가세가 '별도'라 별도 6가지 중`;
+    ? `이 제약사는 항상 부가세 별도 자료라서 별도 7가지 중`
+    : `거래처정보마스터DB의 매입전표부가세가 '별도'라 별도 7가지 중`;
   let matchNote;
   if(best.diff === 0) matchNote = '계산기 공급가 합계와 정확히 일치하는 방식을 찾았어요.';
   else if(best.diff <= 50) matchNote = `계산기 공급가 합계와 ${best.diff.toLocaleString()}원 차이로 거의 일치하는 방식을 찾았어요.`;
@@ -8004,8 +8067,14 @@ function parseInboundPasteText(text){
     out.push(cur);
     return out.map(v=>v.trim());
   });
-  // 헤더 줄(첫 칸이 '공급업체')이 포함되어 있으면 건너뜁니다.
-  if(rows.length && String(rows[0][0]||'').trim() === '공급업체') rows = rows.slice(1);
+  // 헤더 줄이 있을 수도, 없을 수도 있어요. 첫 줄의 수량 칸(14번째, N열)이 숫자가 아니면
+  // (헤더 텍스트로 보이면) 그 줄을 건너뜁니다. 헤더가 아예 없으면 이 조건에 안 걸려서 그대로 써요.
+  // (예전에는 첫 칸이 정확히 '공급업체'라는 글자여야만 인식했는데, 그 텍스트가 조금만 달라도
+  // 헤더를 못 걸러내는 문제가 있었어요.)
+  if(rows.length){
+    const qtyCell = String(rows[0][13] || '').trim();
+    if(!qtyCell || isNaN(Number(qtyCell))) rows = rows.slice(1);
+  }
   return rows;
 }
 
@@ -9132,7 +9201,7 @@ function recordPriceHistory(source, rows){
   const date = todayKey();
   rows.forEach(r=>{
     const code = r.productCode;
-    const unit = Number(r.unit);
+    const unit = parseNumberSafe(r.unit, NaN);
     if(!code || !unit || isNaN(unit) || unit<=0) return; // 미매칭·단가없음 품목은 기록하지 않습니다.
     const i = priceHistoryLog.findIndex(h=>h.code===code && h.source===source && h.date===date);
     const entry = { code, name: r.productName||'', unit, source, date };
@@ -9248,7 +9317,7 @@ function renderChecklist(){
     const marginTxt = (r.margin===null||r.margin===undefined||isNaN(r.margin)) ? '' : (Math.round(r.margin*10000)/100).toLocaleString()+'%';
     return `<tr>
       <td>${r.source}</td><td style="color:${color}; font-weight:800;">${r.status}</td>
-      <td>${r.code}</td><td>${r.name}</td><td>${r.unit?fmtNum(r.unit)+'원':''}</td><td>${marginTxt}</td><td>${r.expiry||''}</td>
+      <td>${r.code}</td><td>${r.name}</td><td>${r.unit?fmtNum(r.unit)+'원':''}</td><td>${marginTxt}</td><td>${formatDateSafe(r.expiry, r.expiry||'')}</td>
     </tr>`;
   }).join('');
 }
@@ -9256,6 +9325,142 @@ function renderChecklist(){
 function initChecklistTab(){
   document.getElementById('checklistRefreshBtn').addEventListener('click', renderChecklist);
   renderChecklist();
+}
+
+// ================= 바코드 스캔 (재고위치 조회) =================
+// 다미스제품코드마스터DB에서 표준코드(또는 바코드1~5)로 상품 하나를 찾아, 재고위치 등 현장에서
+// 바로 필요한 정보만 뽑아옵니다. 매입전표 매칭용 buildProductBarcodeMap()과 달리 소분·구매금지
+// 품목도 제외하지 않아요 — 창고에 실제로 있는 물건이면 뭐든 위치를 찾을 수 있어야 하니까요.
+function lookupProductLocationByCode(rawCode){
+  const pm = uploadState['productMaster'];
+  if(!pm) return { found:false, reason:'다미스제품코드마스터DB가 아직 업로드되지 않았어요.' };
+  const code = String(rawCode || '').trim();
+  if(!code) return { found:false, reason:'코드가 비어있어요.' };
+  const codeDigitsOnly = code.replace(/\D/g, '');
+  const headers = pm.headers;
+  const idxName = headers.indexOf('상품명');
+  const idxLoc = headers.indexOf('재고위치');
+  const idxStorage = headers.indexOf('보관방법');
+  const idxSeparate = headers.indexOf('분리보관');
+  const idxStock = headers.indexOf('가용재고');
+  const idxCode = headers.indexOf('코드');
+  // 표준코드 + 바코드1~바코드5(실제 파일에서 AU~AY열) 전부를 대상으로 찾아요.
+  const barcodeCols = ['표준코드','바코드1','바코드2','바코드3','바코드4','바코드5']
+    .map(name => headers.indexOf(name)).filter(i => i !== -1);
+  // 먼저 정확히 같은 문자열로 찾아보고, 못 찾으면 숫자만 비교해서 한 번 더 찾아요
+  // (스캔/입력 과정에서 공백이나 서식이 살짝 다르게 들어오는 경우까지 잡아내려고요).
+  let row = pm.rows.find(r => barcodeCols.some(ci => String(r[ci] || '').trim() === code));
+  if(!row && codeDigitsOnly){
+    row = pm.rows.find(r => barcodeCols.some(ci => String(r[ci] || '').replace(/\D/g,'') === codeDigitsOnly));
+  }
+  if(!row) return { found:false, reason:`이 코드(${code})와 일치하는 상품을 다미스제품코드마스터DB에서 못 찾았어요.` };
+  return {
+    found: true,
+    code,
+    productCode: idxCode!==-1 ? row[idxCode] : '',
+    name: idxName!==-1 ? row[idxName] : '',
+    location: idxLoc!==-1 ? (row[idxLoc] || '(등록된 위치 없음)') : '(재고위치 열 없음)',
+    storage: idxStorage!==-1 ? (row[idxStorage] || '-') : '-',
+    separate: idxSeparate!==-1 ? (row[idxSeparate] || '-') : '-',
+    stock: idxStock!==-1 ? (row[idxStock] || '0') : '-'
+  };
+}
+
+function showBarcodeResult(info){
+  const resWrap = document.getElementById('barcodeResultWrap');
+  const notFound = document.getElementById('barcodeNotFound');
+  if(!info.found){
+    resWrap.style.display = 'none';
+    notFound.style.display = 'block';
+    notFound.textContent = '❌ ' + info.reason;
+    return;
+  }
+  notFound.style.display = 'none';
+  resWrap.style.display = 'block';
+  document.getElementById('barcodeResultCode').textContent = `제품코드 ${info.productCode || '-'} · 표준코드 ${info.code}`;
+  document.getElementById('barcodeResultName').textContent = info.name || '(상품명 없음)';
+  document.getElementById('barcodeResultLoc').textContent = info.location;
+  document.getElementById('barcodeResultStock').textContent = info.stock;
+  document.getElementById('barcodeResultStorage').textContent = info.storage;
+  document.getElementById('barcodeResultSeparate').textContent = info.separate;
+}
+
+let _barcodeReader = null;
+let _barcodeScanning = false;
+async function startBarcodeScan(){
+  const statusEl = document.getElementById('barcodeStatus');
+  if(typeof ZXing === 'undefined'){
+    statusEl.textContent = '⚠️ 바코드 인식 라이브러리를 못 불러왔어요. 네트워크 상태를 확인하시거나, 아래 직접 입력을 이용해주세요.';
+    return;
+  }
+  if(!window.isSecureContext){
+    statusEl.textContent = '⚠️ 카메라는 https 주소에서만 쓸 수 있어요(지금 주소가 http인 것 같아요). 아래 직접 입력을 이용해주세요.';
+    return;
+  }
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    statusEl.textContent = '⚠️ 이 브라우저에서는 카메라를 쓸 수 없어요. 아래 직접 입력을 이용해주세요.';
+    return;
+  }
+  document.getElementById('barcodeVideoWrap').style.display = 'block';
+  document.getElementById('barcodeStartBtn').style.display = 'none';
+  document.getElementById('barcodeStopBtn').style.display = 'inline-flex';
+  statusEl.textContent = '카메라를 켜는 중이에요... (처음이면 카메라 권한 허용 팝업이 떠요)';
+  _barcodeScanning = true;
+  const hints = new Map();
+  hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+    ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.CODE_128,
+    ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E, ZXing.BarcodeFormat.CODE_39
+  ]);
+  _barcodeReader = new ZXing.BrowserMultiFormatReader(hints);
+  const videoEl = document.getElementById('barcodeVideo');
+  const onDecode = (result)=>{
+    if(result && _barcodeScanning){
+      const info = lookupProductLocationByCode(result.getText());
+      showBarcodeResult(info);
+      statusEl.textContent = `✅ 인식됨: ${result.getText()} (계속 다른 상품을 비추면 자동으로 갱신돼요)`;
+    }
+  };
+  const withTimeout = (promise, ms)=> Promise.race([
+    promise,
+    new Promise((_, reject)=> setTimeout(()=>{ const e = new Error('카메라 권한 응답이 없어요(팝업이 안 뜨거나 무시된 것 같아요)'); e.name='TimeoutError'; reject(e); }, ms))
+  ]);
+  try{
+    // 후면 카메라(환경 카메라)를 우선으로 시도해요 — 휴대폰으로 바코드 찍을 땐 후면이 자연스러워요.
+    await withTimeout(_barcodeReader.decodeFromConstraints({ video: { facingMode: { ideal: 'environment' } } }, videoEl, onDecode), 10000);
+    statusEl.textContent = '바코드를 화면 가운데에 비춰주세요.';
+  }catch(e1){
+    // 일부 기기(특히 안드로이드 일부 브라우저)는 위 조건을 너무 까다롭게 봐서 실패할 수 있어요.
+    // 그럴 땐 카메라 종류를 안 가리고 아무 카메라나 켜보도록 한 번 더 시도해요.
+    try{
+      await withTimeout(_barcodeReader.decodeFromConstraints({ video: true }, videoEl, onDecode), 10000);
+      statusEl.textContent = '바코드를 화면 가운데에 비춰주세요. (일부 기기에서는 전면 카메라가 켜질 수 있어요)';
+    }catch(e2){
+      const errName = (e2 && e2.name) || (e1 && e1.name) || '알 수 없음';
+      const errMsg = (e2 && e2.message) || (e1 && e1.message) || String(e2 || e1);
+      const extra = errName === 'TimeoutError' ? ' — 이전에 카메라 권한을 거부하신 적 있으면, 사이트 설정에서 카메라를 다시 "허용"으로 바꿔주세요.' : '';
+      statusEl.textContent = `⚠️ 카메라를 시작할 수 없어요 (${errName}): ${errMsg}${extra} — 아래 직접 입력을 이용해주세요.`;
+      stopBarcodeScan();
+    }
+  }
+}
+function stopBarcodeScan(){
+  _barcodeScanning = false;
+  if(_barcodeReader){ try{ _barcodeReader.reset(); }catch(e){} _barcodeReader = null; }
+  document.getElementById('barcodeVideoWrap').style.display = 'none';
+  document.getElementById('barcodeStartBtn').style.display = 'inline-flex';
+  document.getElementById('barcodeStopBtn').style.display = 'none';
+}
+
+function initBarcodeTab(){
+  document.getElementById('barcodeStartBtn').addEventListener('click', startBarcodeScan);
+  document.getElementById('barcodeStopBtn').addEventListener('click', stopBarcodeScan);
+  document.getElementById('barcodeManualBtn').addEventListener('click', ()=>{
+    const val = document.getElementById('barcodeManualInput').value;
+    showBarcodeResult(lookupProductLocationByCode(val));
+  });
+  document.getElementById('barcodeManualInput').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter'){ e.preventDefault(); document.getElementById('barcodeManualBtn').click(); }
+  });
 }
 
 // ================= 메인화면 =================
@@ -9316,8 +9521,6 @@ function applyAppTheme(theme){
   const btn = document.getElementById('themeToggleBtn');
   if(btn) btn.textContent = theme==='dark' ? '☀️ 라이트 모드' : '🌙 다크 모드';
   try{ window.storage.set(APP_THEME_KEY, theme, false); }catch(e){}
-  // [고도화 패치] 다크/라이트 전환 시 Chart.js 콤보 차트 색상도 함께 갱신
-  try{ if(typeof renderStockChart === 'function') renderStockChart(); }catch(e){}
 }
 async function initAppTheme(){
   let theme = 'light';
@@ -10552,6 +10755,7 @@ initUploadTabs().then(async ()=>{
   initProductSearch2Tab();
   initPriceHistoryTab();
   initChecklistTab();
+  initBarcodeTab();
   renderSummaryDashboard();
 });
 document.getElementById('stockHistoryYearFilter').addEventListener('change', renderStockChart);
@@ -11424,6 +11628,11 @@ computeItems();
 renderAll();
 
 })();
+</script>
+<script>
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(()=>{}));
+  }
 </script>
 </body>
 </html>

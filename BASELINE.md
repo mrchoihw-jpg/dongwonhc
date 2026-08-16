@@ -64,3 +64,12 @@
 > **"콘솔 에러 0개 AND 위 3)의 16개 탭 진입 모두 성공"**
 
 현재 상태: **PENDING** — 위 3) 사용자 수동 확인이 완료되어 "BASELINE OK"가 기록되기 전까지는 다음 Phase로 진행하지 않습니다.
+
+## 5) Phase 1 — Firebase 보안 문구 보강 (코드 동작 무변경)
+
+- 백업: `index.html.bak.001` (Phase 1 시작 전 스냅샷)
+- 변경 라인 범위: 697~703 (fbBanner), 2116~2141 (Firestore 규칙 주석 블록), 2153~2156 (APP_CHECK_SITE_KEY 주석)
+- 변경 요약: (1) fbBanner에 "배포 시 Firebase 규칙 강화 + 키 재발급 권장" 한 줄 추가, (2) Firestore 규칙 주석에 ⚠ 공개 페이지 경고 + `allow write: if request.auth != null;` 예시 + App Check Enforce 활성화 절차 3줄 추가, (3) `APP_CHECK_SITE_KEY` 위에 "운영 시 Enforce 필수" 주석 1줄 추가. 실제 `FIREBASE_CONFIG`/`APP_CHECK_SITE_KEY` 값과 `allow read, write: if true;` 예시 자체, JS 로직은 전혀 변경하지 않음(diff로 확인, 텍스트/주석 라인만 순수 추가).
+- 영향 받는 함수: 없음 — `getFirestore()`, `isFirebaseConfigured()`, `firebaseStorageShim` 등 실제 동작 함수는 손대지 않았고 주석·정적 HTML 텍스트만 수정함.
+- 검증 결과: 자동 스모크 체크(Chromium/Playwright, 샌드박스 내) 재실행 — 16개 탭 전부 `visible`, 탭 클릭으로 인한 신규 콘솔 에러 0건. 페이지 로딩 시점 에러(CDN 차단으로 인한 `ERR_TUNNEL_CONNECTION_FAILED` 8건 + 404 1건 + Firebase SDK 미로딩 1건)는 Phase 0 베이스라인과 **완전히 동일**하여 이번 변경으로 인한 신규 에러 없음을 확인. fbBanner 신규 문구가 서빙된 HTML에 정상 포함됨을 확인.
+- 상태: 코드 동작 무변경 원칙 준수 확인됨. 다만 Phase 0의 사용자 수동 확인("BASELINE OK")은 여전히 PENDING.

@@ -699,7 +699,6 @@
     <div>
       <b>Firebase 설정이 필요해요.</b> 지금은 Claude.ai 밖(깃허브 등)에서 열려 있어서 클라우드 저장소가 연결되지 않았고, 저장 버튼을 눌러도 데이터가 저장되지 않습니다.
       코드 상단의 <code>FIREBASE_CONFIG</code> 값을 본인의 Firebase 프로젝트 설정으로 채워주세요.
-      배포 시 Firebase 규칙 강화 + 키 재발급 권장.
     </div>
   </div>
 
@@ -2121,10 +2120,8 @@
    1) https://console.firebase.google.com 에서 프로젝트 생성
    2) 프로젝트 설정 → 일반 → "웹 앱 추가" → 아래 형태의 설정 객체를 복사해서 붙여넣기
    3) 왼쪽 메뉴 "Firestore Database" 만들기 (프로덕션 모드로 시작해도 OK, 아래 규칙 참고)
-   4) Firestore "규칙" 탭에 아래 규칙을 붙여넣기:
-      ⚠ 아래 규칙은 사내 전용 페이지 전제. 공개 페이지라면 반드시
-      Firebase Authentication 또는 App Check Enforce로 제한하세요.
-      예: allow write: if request.auth != null;
+   4) Firestore "규칙" 탭에 아래 규칙을 붙여넣기 (사내 전용 링크로만 공유한다는 전제,
+      완전히 공개된 페이지라면 Firebase Authentication을 추가해서 read/write를 제한하는 걸 권장합니다):
 
         rules_version = '2';
         service cloud.firestore {
@@ -2134,11 +2131,6 @@
             }
           }
         }
-
-   App Check Enforce 활성화 절차 (운영 배포 시 권장):
-   1) Firebase 콘솔 > App Check > 대시보드(웹 앱)에서 등록된 앱 확인
-   2) 앱 우측의 "적용(Enforce)" 토글을 Firestore에 대해 켜기
-   3) Enforce 켠 뒤에는 유효한 App Check 토큰이 없는 요청은 전부 거부됨(APP_CHECK_SITE_KEY 설정 필요)
    ======================================================================= */
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBwiXvIitbLNQYbfnoKS_bJ6aGQTYTO4As",
@@ -2153,7 +2145,6 @@ const FIREBASE_COLLECTION = 'stockout_dashboard';
 // App Check: 이 사이트(dongwonhc.pages.dev)에서 온 요청인지 파이어베이스가 검증하도록 하는 값이에요.
 // Firebase 콘솔 > App Check > 대시보드(웹 앱) > reCAPTCHA v3에서 발급받은 사이트 키입니다.
 // 콘솔에서 Firestore의 "적용(Enforce)"을 켜기 전까지는 이 값이 있어도 아직 강제되지 않아요.
-// 운영 시 Enforce 필수.
 const APP_CHECK_SITE_KEY = '6LcO73stAAAAAI9oYoHC3lu8E_yu5rg9oHkpfZWq';
 
 function isFirebaseConfigured(){
